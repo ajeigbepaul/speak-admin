@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     // In a real app, you'd validate credentials against a backend (e.g., Firebase Auth)
-    if (email === mockAdminUser.email && pass === 'password') { // Demo credentials
+    if (email === mockAdminUser.email && pass === 'paaje@2025') { // Updated password here
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(mockAdminUser));
       setUser(mockAdminUser);
       setIsLoading(false);
