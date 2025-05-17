@@ -1,3 +1,4 @@
+
 export type UserRole = "superadmin" | "admin";
 
 export interface User {
@@ -12,14 +13,15 @@ export type CounsellorStatus = "Pending" | "Verified" | "Rejected";
 
 export interface Counsellor {
   id: string;
-  name: string;
-  email: string;
-  specialization: string;
-  registrationDate: string; // ISO Date string
-  status: CounsellorStatus;
-  bio?: string;
-  profilePictureUrl?: string;
-  verificationDocuments?: { name: string; url: string }[]; // Example
+  fullName: string; // from personalInfo.fullName
+  email: string; // from personalInfo.email
+  phoneNumber?: string; // from personalInfo.phoneNumber
+  profilePic?: string; // from personalInfo.profilePic
+  specialization?: string; // from professionalInfo.occupation
+  createdAt: string; // ISO Date string, from root createdAt
+  status: CounsellorStatus; // Derived from root isVerified or root status
+  // address might be added later if needed: data.personalInfo.address
+  // verificationDocuments are no longer in the primary structure shown
 }
 
 export interface DashboardAnalytics {

@@ -6,45 +6,41 @@ import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firesto
 
 async function getCounsellors(): Promise<Counsellor[]> {
   try {
-    const counsellorsCol = collection(db, 'counsellors');
-    // Consider adding orderBy if you want a specific default sort, e.g., by registrationDate
-    const q = query(counsellorsCol, orderBy("registrationDate", "desc"));
+    const counsellorsCol = collection(db, 'counsellors'); // Corrected collection name to 'counsellors'
+    const q = query(counsellorsCol, orderBy("createdAt", "desc"));
     const counsellorSnapshot = await getDocs(q);
     const counsellorsList = counsellorSnapshot.docs.map(doc => {
       const data = doc.data();
+      
       let status: Counsellor['status'] = 'Pending'; // Default
-
-      if (data.status) {
+      if (data.status) { // If a root 'status' field exists
         status = data.status as Counsellor['status'];
-      } else if (typeof data.isVerified === 'boolean') {
+      } else if (typeof data.isVerified === 'boolean') { // Fallback to 'isVerified'
         status = data.isVerified ? 'Verified' : 'Pending';
       }
       
-      // Convert Firestore Timestamp to ISO string for registrationDate
-      let registrationDateString = new Date().toISOString(); // Fallback
-      if (data.registrationDate && data.registrationDate instanceof Timestamp) {
-        registrationDateString = data.registrationDate.toDate().toISOString();
-      } else if (typeof data.registrationDate === 'string') { // Handle if it's already a string
-        registrationDateString = data.registrationDate;
+      let createdAtString = new Date().toISOString(); // Fallback
+      if (data.createdAt && data.createdAt instanceof Timestamp) {
+        createdAtString = data.createdAt.toDate().toISOString();
+      } else if (typeof data.createdAt === 'string') { 
+        createdAtString = data.createdAt;
       }
-
 
       return {
         id: doc.id,
-        name: data.name || 'N/A',
-        email: data.email || 'N/A',
-        specialization: data.specialization || 'N/A',
-        registrationDate: registrationDateString,
+        fullName: data.personalInfo?.fullName || 'N/A',
+        email: data.personalInfo?.email || 'N/A',
+        phoneNumber: data.personalInfo?.phoneNumber,
+        profilePic: data.personalInfo?.profilePic || `https://placehold.co/150x150.png?text=${(data.personalInfo?.fullName || 'N/A').charAt(0)}`,
+        specialization: data.professionalInfo?.occupation,
+        createdAt: createdAtString,
         status: status,
-        bio: data.bio || undefined,
-        profilePictureUrl: data.profilePictureUrl || `https://placehold.co/150x150.png?text=${(data.name || 'N/A').charAt(0)}`,
-        verificationDocuments: data.verificationDocuments || [],
       } as Counsellor;
     });
     return counsellorsList;
   } catch (error) {
     console.error("Error fetching counsellors:", error);
-    return []; // Return empty array on error
+    return []; 
   }
 }
 

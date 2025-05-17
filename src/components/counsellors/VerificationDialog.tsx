@@ -14,13 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+// import { Textarea } from "@/components/ui/textarea"; // Bio not in new structure
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Counsellor } from "@/lib/types";
 import { updateCounsellorStatus } from "@/actions/counsellorActions";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, FileText, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, FileText, ExternalLink, Phone } from "lucide-react";
 
 interface VerificationDialogProps {
   counsellor: Counsellor | null;
@@ -66,18 +66,24 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
       <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Counsellor Verification</DialogTitle>
-          <DialogDescription>Review the counsellor's details and documents before verifying.</DialogDescription>
+          <DialogDescription>Review the counsellor's details before changing status.</DialogDescription>
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto pr-2 space-y-6 py-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={counsellor.profilePictureUrl} alt={counsellor.name} data-ai-hint="person avatar" />
-              <AvatarFallback>{counsellor.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={counsellor.profilePic} alt={counsellor.fullName} data-ai-hint="person avatar"/>
+              <AvatarFallback>{counsellor.fullName?.charAt(0) || 'C'}</AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="text-xl font-semibold">{counsellor.name}</h3>
+              <h3 className="text-xl font-semibold">{counsellor.fullName}</h3>
               <p className="text-sm text-muted-foreground">{counsellor.email}</p>
+              {counsellor.phoneNumber && (
+                <p className="text-sm text-muted-foreground flex items-center mt-1">
+                  <Phone className="h-3 w-3 mr-1.5" />
+                  {counsellor.phoneNumber}
+                </p>
+              )}
               <Badge variant={counsellor.status === "Verified" ? "default" : counsellor.status === "Pending" ? "secondary" : "destructive"} className="mt-1">
                 {counsellor.status}
               </Badge>
@@ -86,40 +92,18 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="specialization">Specialization</Label>
-              <Input id="specialization" value={counsellor.specialization} readOnly />
+              <Label htmlFor="specialization">Occupation/Specialization</Label>
+              <Input id="specialization" value={counsellor.specialization || "Not provided"} readOnly />
             </div>
             <div>
               <Label htmlFor="registrationDate">Registration Date</Label>
-              <Input id="registrationDate" value={new Date(counsellor.registrationDate).toLocaleDateString()} readOnly />
+              <Input id="registrationDate" value={new Date(counsellor.createdAt).toLocaleDateString()} readOnly />
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="bio">Biography</Label>
-            <Textarea id="bio" value={counsellor.bio || "Not provided"} readOnly className="min-h-[100px]" />
-          </div>
+          {/* Bio and VerificationDocuments are removed as they are not in the new data structure */}
+          {/* If they might exist in some documents, conditional rendering can be added back */}
 
-          {counsellor.verificationDocuments && counsellor.verificationDocuments.length > 0 && (
-            <div>
-              <Label>Verification Documents</Label>
-              <ul className="mt-1 space-y-2 rounded-md border p-3">
-                {counsellor.verificationDocuments.map((doc, index) => (
-                  <li key={index} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span>{doc.name}</span>
-                    </div>
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                        View <ExternalLink className="ml-1.5 h-3 w-3" />
-                      </a>
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
 
         <DialogFooter className="pt-4 border-t">

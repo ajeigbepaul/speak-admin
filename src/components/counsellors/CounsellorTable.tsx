@@ -47,7 +47,6 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
       if (counsellorToVerify) {
         setSelectedCounsellor(counsellorToVerify);
         setIsVerificationDialogOpen(true);
-        // Clean up URL params
         router.replace('/counsellors', undefined);
       }
     }
@@ -57,7 +56,7 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
   const filteredCounsellors = useMemo(() => {
     return counsellors.filter((counsellor) => {
       const matchesSearch =
-        counsellor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        counsellor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         counsellor.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === "All" || counsellor.status === filterStatus;
       return matchesSearch && matchesStatus;
@@ -71,6 +70,9 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
 
   const handleStatusUpdate = (counsellorId: string, newStatus: Counsellor["status"]) => {
     setCounsellors(prev => prev.map(c => c.id === counsellorId ? { ...c, status: newStatus } : c));
+    // Also update initialCounsellors if it's used elsewhere or for re-filtering, though typically state drives UI
+    const updatedInitialCounsellors = initialCounsellors.map(c => c.id === counsellorId ? { ...c, status: newStatus } : c);
+    // If initialCounsellors is not meant to be mutable from here, this line might not be needed or handled differently.
   };
   
   const getStatusBadgeVariant = (status: Counsellor["status"]) => {
@@ -90,6 +92,11 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
       default: return null;
     }
   }
+
+  // Update counsellors state if initialCounsellors prop changes
+  useEffect(() => {
+    setCounsellors(initialCounsellors);
+  }, [initialCounsellors]);
 
 
   return (
@@ -123,7 +130,6 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead className="hidden md:table-cell">Specialization</TableHead>
               <TableHead className="hidden lg:table-cell">Registered</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -136,18 +142,16 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={counsellor.profilePictureUrl} alt={counsellor.name} data-ai-hint="person avatar" />
-                        <AvatarFallback>{counsellor.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={counsellor.profilePic} alt={counsellor.fullName} data-ai-hint="person avatar" />
+                        <AvatarFallback>{counsellor.fullName.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{counsellor.name}</div>
-                        <div className="text-xs text-muted-foreground md:hidden">{counsellor.specialization}</div>
+                        <div className="font-medium">{counsellor.fullName}</div>
                         <div className="text-xs text-muted-foreground hidden md:block">{counsellor.email}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{counsellor.specialization}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{new Date(counsellor.registrationDate).toLocaleDateString()}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{new Date(counsellor.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(counsellor.status)} className="capitalize">
                       {getStatusIcon(counsellor.status)}
@@ -166,7 +170,6 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
                         <DropdownMenuItem onClick={() => handleOpenVerificationDialog(counsellor)}>
                           View Details / Verify
                         </DropdownMenuItem>
-                        {/* Add other actions like 'Edit Profile', 'Deactivate Account' */}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -174,7 +177,7 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={4} className="h-24 text-center"> {/* Adjusted colSpan */}
                   No counsellors found.
                 </TableCell>
               </TableRow>

@@ -1,72 +1,44 @@
+
 import type { Counsellor, DashboardAnalytics, MonthlyData, ChatStatusData, AppNotification, User } from './types';
 
-export const mockAdminUser: User = { // Updated to use User type
+export const mockAdminUser: User = {
   id: 'admin001',
   name: 'Admin User',
-  email: 'pdave4krist@gmail.com', // Updated email
+  email: 'pdave4krist@gmail.com',
   avatarUrl: 'https://placehold.co/100x100.png',
-  role: 'superadmin', // Added role
+  role: 'superadmin',
 };
 
+// Mock counsellors are less relevant now as data is fetched from Firestore
+// but can be kept for reference or testing if Firestore is unavailable.
 export const mockCounsellors: Counsellor[] = [
   {
     id: 'coun001',
-    name: 'Dr. Alice Wonderland',
+    fullName: 'Dr. Alice Wonderland',
     email: 'alice@example.com',
     specialization: 'Cognitive Behavioral Therapy',
-    registrationDate: new Date(2023, 5, 15).toISOString(),
+    createdAt: new Date(2023, 5, 15).toISOString(),
     status: 'Verified',
-    bio: 'Experienced CBT specialist with over 10 years of practice.',
-    profilePictureUrl: 'https://placehold.co/150x150.png?a=1',
-    verificationDocuments: [{ name: 'License.pdf', url: '#' }, { name: 'Degree.pdf', url: '#' }],
+    profilePic: 'https://placehold.co/150x150.png?a=1',
+    // verificationDocuments: [{ name: 'License.pdf', url: '#' }, { name: 'Degree.pdf', url: '#' }],
+    // bio: 'Experienced CBT specialist with over 10 years of practice.',
   },
   {
     id: 'coun002',
-    name: 'Bob The Builder',
+    fullName: 'Bob The Builder',
     email: 'bob@example.com',
     specialization: 'Family Therapy',
-    registrationDate: new Date(2023, 8, 20).toISOString(),
+    createdAt: new Date(2023, 8, 20).toISOString(),
     status: 'Pending',
-    bio: 'Focuses on family dynamics and conflict resolution.',
-    profilePictureUrl: 'https://placehold.co/150x150.png?a=2',
-    verificationDocuments: [{ name: 'Cert.pdf', url: '#' }],
-  },
-  {
-    id: 'coun003',
-    name: 'Charlie Brown',
-    email: 'charlie@example.com',
-    specialization: 'Stress Management',
-    registrationDate: new Date(2024, 0, 10).toISOString(),
-    status: 'Verified',
-    bio: 'Helps clients develop coping mechanisms for stress and anxiety.',
-    profilePictureUrl: 'https://placehold.co/150x150.png?a=3',
-  },
-  {
-    id: 'coun004',
-    name: 'Diana Prince',
-    email: 'diana@example.com',
-    specialization: 'Adolescent Psychology',
-    registrationDate: new Date(2024, 1, 5).toISOString(),
-    status: 'Pending',
-    bio: 'Specializes in working with teenagers and young adults.',
-    profilePictureUrl: 'https://placehold.co/150x150.png?a=4',
-    verificationDocuments: [{ name: 'ID.pdf', url: '#' }, { name: 'Diploma.pdf', url: '#' }],
-  },
-    {
-    id: 'coun005',
-    name: 'Edward Scissorhands',
-    email: 'edward@example.com',
-    specialization: 'Art Therapy',
-    registrationDate: new Date(2024, 2, 1).toISOString(),
-    status: 'Rejected',
-    bio: 'Uses creative methods to help clients express themselves.',
-    profilePictureUrl: 'https://placehold.co/150x150.png?a=5',
+    profilePic: 'https://placehold.co/150x150.png?a=2',
+    // verificationDocuments: [{ name: 'Cert.pdf', url: '#' }],
+    // bio: 'Focuses on family dynamics and conflict resolution.',
   },
 ];
 
 export const mockDashboardAnalytics: DashboardAnalytics = {
   totalUsers: 1250,
-  totalCounsellors: 75,
+  totalCounsellors: 75, // This will be overridden by live data
   pendingChatRequests: 15,
   activeChats: 30,
   resolvedCases: 890,
@@ -95,7 +67,7 @@ export const mockNotifications: AppNotification[] = [
     message: 'Bob The Builder has registered and is awaiting verification.',
     timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
     read: false,
-    link: '/counsellors?highlight=coun002',
+    link: '/counsellors?action=verify&id=coun002', // Ensure ID matches a potential counsellor
   },
   {
     id: 'notif002',
