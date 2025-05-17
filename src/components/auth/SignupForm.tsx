@@ -91,7 +91,7 @@ export function SignupForm() {
             description: "Superadmin account created and configured.",
             variant: "default",
           });
-          router.push('/'); // Redirect to dashboard or login
+          router.push('/dashboard'); // Redirect directly to dashboard
         } else {
           // Role setting failed. This is a critical issue.
           // Ideally, you might want to delete the Firebase Auth user here or provide manual cleanup instructions.
@@ -141,31 +141,31 @@ export function SignupForm() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
-              name="email" 
-              type="email" 
+            <Input
+              id="email"
+              name="email"
+              type="email"
               placeholder="superadmin@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required 
+              required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <div className="relative">
-              <Input 
-                id="password" 
-                name="password" 
-                type={showPassword ? "text" : "password"} 
-                placeholder="••••••••" 
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required 
+                required
               />
-              <Button 
-                type="button" 
-                variant="ghost" 
+              <Button
+                type="button"
+                variant="ghost"
                 size="icon"
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                 onClick={() => setShowPassword(!showPassword)}
@@ -178,18 +178,18 @@ export function SignupForm() {
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <div className="relative">
-              <Input 
-                id="confirmPassword" 
-                name="confirmPassword" 
-                type={showConfirmPassword ? "text" : "password"} 
-                placeholder="••••••••" 
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                required 
+                required
               />
-              <Button 
-                type="button" 
-                variant="ghost" 
+              <Button
+                type="button"
+                variant="ghost"
                 size="icon"
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
