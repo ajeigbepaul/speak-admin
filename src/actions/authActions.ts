@@ -10,7 +10,8 @@ export async function loginAction(prevState: any, formData: FormData) {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  if (email === mockAdminUser.email && password === "password") { // Hardcoded credentials for demo
+  // Updated credentials for demo
+  if (email === mockAdminUser.email && password === "paaje@2025") { 
     // In a real app, you'd set up a session or JWT here.
     // For this scaffold, client-side will handle auth state based on success.
     return { success: true, message: "Login successful" };

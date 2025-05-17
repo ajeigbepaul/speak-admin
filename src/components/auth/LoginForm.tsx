@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useActionState, useEffect, useState } from 'react'; // Changed useFormState to useActionState and imported from 'react'
+import { useActionState, useEffect, useState } from 'react'; 
 import { useFormStatus } from "react-dom";
 import { useRouter } from 'next/navigation';
 import { loginAction } from '@/actions/authActions';
@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, LogIn, Eye, EyeOff } from "lucide-react";
+import { mockAdminUser } from '@/lib/mockData'; // Import mockAdminUser for placeholder
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -24,20 +25,18 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-  const [state, formAction] = useActionState(loginAction, { success: false, message: "" }); // Changed useFormState to useActionState
+  const [state, formAction] = useActionState(loginAction, { success: false, message: "" }); 
   const router = useRouter();
-  const { login } = useAuth(); // Using client-side login to set user context
+  const { login } = useAuth(); 
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (state.success) {
-      // The server action confirmed credentials. Now update client-side auth state.
-      // This is a simplified flow. In a real app, server action might return a token.
       const formData = new FormData(document.querySelector('form') as HTMLFormElement);
       const email = formData.get("email") as string;
-      const password = formData.get("password") as string;
+      const password = formData.get("password") as string; // This is okay for client-side mock
       login(email, password).then((loggedIn) => {
-        if(loggedIn) router.push('/'); // Redirect to dashboard, which will be handled by src/app/page.tsx
+        if(loggedIn) router.push('/'); 
       });
     }
   }, [state, router, login]);
@@ -60,7 +59,8 @@ export function LoginForm() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" placeholder="admin@example.com" required />
+            {/* Use the new default email as placeholder */}
+            <Input id="email" name="email" type="email" placeholder={mockAdminUser.email} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>

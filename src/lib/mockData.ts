@@ -1,10 +1,11 @@
-import type { Counsellor, DashboardAnalytics, MonthlyData, ChatStatusData, AppNotification } from './types';
+import type { Counsellor, DashboardAnalytics, MonthlyData, ChatStatusData, AppNotification, User } from './types';
 
-export const mockAdminUser = {
+export const mockAdminUser: User = { // Updated to use User type
   id: 'admin001',
   name: 'Admin User',
-  email: 'admin@speak.app',
+  email: 'pdave4krist@gmail.com', // Updated email
   avatarUrl: 'https://placehold.co/100x100.png',
+  role: 'superadmin', // Added role
 };
 
 export const mockCounsellors: Counsellor[] = [

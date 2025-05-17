@@ -1,8 +1,11 @@
+export type UserRole = "superadmin" | "admin";
+
 export interface User {
   id: string;
   name: string;
   email: string;
   avatarUrl?: string;
+  role: UserRole; // Added role
 }
 
 export type CounsellorStatus = "Pending" | "Verified" | "Rejected";
