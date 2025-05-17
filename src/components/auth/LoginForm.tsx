@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal, LogIn, Eye, EyeOff } from "lucide-react";
-import { mockAdminUser } from '@/lib/mockData'; // Keep for placeholder email for now
+import { Terminal, LogIn, Eye, EyeOff, UserPlus } from "lucide-react"; // Added UserPlus
+import { mockAdminUser } from '@/lib/mockData'; 
 
 interface SubmitButtonProps {
   pending: boolean;
@@ -27,38 +27,39 @@ function SubmitButton({ pending }: SubmitButtonProps) {
 
 export function LoginForm() {
   const router = useRouter();
-  const { login, user } = useAuth();
+  const { login, user, isLoading: authIsLoading } = useAuth(); // Renamed isLoading to authIsLoading
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Changed from isLoading to isSubmitting
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      router.push('/'); // Redirect if user is already logged in or after successful login
+    if (!authIsLoading && user) { // Check authIsLoading from useAuth
+      router.replace('/'); 
     }
-  }, [user, router]);
+  }, [user, authIsLoading, router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       await login(email, password);
       // Successful login will trigger useEffect above to redirect
     } catch (err: any) {
-      // Handle Firebase auth errors (e.g., auth/invalid-credential, auth/user-not-found)
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-email') {
         setError("Invalid email or password.");
       } else {
         setError("An unexpected error occurred. Please try again.");
       }
       console.error("Login failed:", err);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  const superAdminEmail = process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
 
   return (
     <Card className="w-full max-w-md shadow-xl">
@@ -82,7 +83,7 @@ export function LoginForm() {
               id="email" 
               name="email" 
               type="email" 
-              placeholder={mockAdminUser.email} // Use new default email as placeholder
+              placeholder={superAdminEmail || mockAdminUser.email} // Use superAdminEmail as placeholder
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required 
@@ -120,8 +121,14 @@ export function LoginForm() {
             </Alert>
           )}
         </CardContent>
-        <CardFooter>
-          <SubmitButton pending={isLoading} />
+        <CardFooter className="flex flex-col gap-4">
+          <SubmitButton pending={isSubmitting} />
+          {superAdminEmail && ( // Only show signup link if superAdminEmail is configured
+            <Button variant="link" size="sm" onClick={() => router.push('/signup')} className="w-full">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Create Superadmin Account (Initial Setup)
+            </Button>
+          )}
         </CardFooter>
       </form>
     </Card>

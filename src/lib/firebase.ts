@@ -1,7 +1,7 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import { getFirestore, type Firestore, serverTimestamp as fsServerTimestamp } from "firebase/firestore"; // Added serverTimestamp
 
 // Firebase configuration using environment variables
 const firebaseConfig = {
@@ -19,13 +19,12 @@ if (
   !firebaseConfig.apiKey ||
   !firebaseConfig.authDomain ||
   !firebaseConfig.projectId ||
-  !firebaseConfig.appId
+  !firebaseConfig.appId ||
+  !process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL
 ) {
   console.error(
-    "Firebase configuration is missing. Make sure all NEXT_PUBLIC_FIREBASE_* environment variables are set in your .env.local file."
+    "Firebase configuration or NEXT_PUBLIC_SUPERADMIN_EMAIL is missing. Make sure all NEXT_PUBLIC_FIREBASE_* and NEXT_PUBLIC_SUPERADMIN_EMAIL environment variables are set in your .env.local file."
   );
-  // You might want to throw an error here or handle this case appropriately
-  // For now, we'll log an error. The app might not function correctly.
 }
 
 
@@ -38,5 +37,6 @@ if (!getApps().length) {
 
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
+const serverTimestamp = fsServerTimestamp; // Export serverTimestamp
 
-export { app, auth, db };
+export { app, auth, db, serverTimestamp };
