@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useId } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,13 +14,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-// import { Textarea } from "@/components/ui/textarea"; // Bio not in new structure
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Counsellor } from "@/lib/types";
 import { updateCounsellorStatus } from "@/actions/counsellorActions";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, FileText, ExternalLink, Phone } from "lucide-react";
+import { CheckCircle, XCircle, Phone } from "lucide-react";
 
 interface VerificationDialogProps {
   counsellor: Counsellor | null;
@@ -32,6 +31,8 @@ interface VerificationDialogProps {
 export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusUpdate }: VerificationDialogProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const titleId = useId();
+  const descriptionId = useId();
 
   if (!counsellor) return null;
 
@@ -63,10 +64,14 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent
+        className="sm:max-w-2xl max-h-[90vh] flex flex-col"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+      >
         <DialogHeader>
-          <DialogTitle>Counsellor Verification</DialogTitle>
-          <DialogDescription>Review the counsellor's details before changing status.</DialogDescription>
+          <DialogTitle id={titleId}>Counsellor Verification</DialogTitle>
+          <DialogDescription id={descriptionId}>Review the counsellor's details before changing status.</DialogDescription>
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto pr-2 space-y-6 py-4">
@@ -100,9 +105,6 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
               <Input id="registrationDate" value={new Date(counsellor.createdAt).toLocaleDateString()} readOnly />
             </div>
           </div>
-
-          {/* Bio and VerificationDocuments are removed as they are not in the new data structure */}
-          {/* If they might exist in some documents, conditional rendering can be added back */}
 
         </div>
 

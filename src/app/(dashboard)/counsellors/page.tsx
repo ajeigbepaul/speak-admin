@@ -6,7 +6,7 @@ import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firesto
 
 async function getCounsellors(): Promise<Counsellor[]> {
   try {
-    const counsellorsCol = collection(db, 'counsellors'); // Corrected collection name to 'counsellors'
+    const counsellorsCol = collection(db, 'counselors'); // Corrected collection name to 'counsellors'
     const q = query(counsellorsCol, orderBy("createdAt", "desc"));
     const counsellorSnapshot = await getDocs(q);
     const counsellorsList = counsellorSnapshot.docs.map(doc => {
