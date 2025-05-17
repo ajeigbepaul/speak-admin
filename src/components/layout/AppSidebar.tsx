@@ -15,13 +15,14 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Users, UserCheck, LogOut, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Users, UserCheck, LogOut, MessageSquare, UsersCog } from "lucide-react"; // Added UsersCog
 import { mockNotifications } from "@/lib/mockData";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/counsellors", label: "Counsellors", icon: Users, badgeKey: "pendingCounsellors" },
-  // Add more items as needed e.g. chats, users
+  { href: "/counsellors", label: "Counsellors", icon: UserCheck, badgeKey: "pendingCounsellors" },
+  { href: "/users", label: "User Management", icon: UsersCog }, // Changed icon to UsersCog for distinction
+  // Add more items as needed e.g. chats
   // { href: "/chats", label: "Chats", icon: MessageSquare, badgeKey: "pendingChats" },
 ];
 

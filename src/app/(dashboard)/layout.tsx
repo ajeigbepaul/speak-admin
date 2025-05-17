@@ -2,12 +2,11 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation'; // Added usePathname
 import { useAuth } from '@/hooks/useAuth';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { Skeleton } from '@/components/ui/skeleton'; // For loading state
 
 export default function DashboardLayout({
   children,
@@ -16,7 +15,8 @@ export default function DashboardLayout({
 }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const [pageTitle, setPageTitle] = useState("Dashboard"); // This can be dynamic based on route
+  const pathname = usePathname(); // Using usePathname
+  const [pageTitle, setPageTitle] = useState("Dashboard");
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -24,12 +24,16 @@ export default function DashboardLayout({
     }
   }, [user, isLoading, router]);
 
-  // Placeholder for dynamic title logic
-  // useEffect(() => {
-  //   const currentPath = window.location.pathname;
-  //   if (currentPath.includes('/counsellors')) setPageTitle('Counsellors');
-  //   else setPageTitle('Dashboard');
-  // }, [router]); // This is a naive way, Next.js offers better ways using route segments
+  useEffect(() => {
+    if (pathname === '/') {
+      setPageTitle('Dashboard');
+    } else if (pathname.startsWith('/counsellors')) {
+      setPageTitle('Counsellor Management');
+    } else if (pathname.startsWith('/users')) {
+      setPageTitle('User Management');
+    }
+    // Add more else if blocks for other pages
+  }, [pathname]);
 
   if (isLoading || !user) {
     return (
@@ -56,7 +60,7 @@ export default function DashboardLayout({
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         <div className="flex flex-1 flex-col">
-          <AppHeader pageTitle={pageTitle} /> {/* Update this dynamically */}
+          <AppHeader pageTitle={pageTitle} />
           <SidebarInset>
             <main className="flex-1 p-4 md:p-6 lg:p-8 bg-background">
               {children}
