@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
-import { useEffect, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react'; // Changed useFormState to useActionState and imported from 'react'
+import { useFormStatus } from "react-dom";
 import { useRouter } from 'next/navigation';
 import { loginAction } from '@/actions/authActions';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-  const [state, formAction] = useFormState(loginAction, { success: false, message: "" });
+  const [state, formAction] = useActionState(loginAction, { success: false, message: "" }); // Changed useFormState to useActionState
   const router = useRouter();
   const { login } = useAuth(); // Using client-side login to set user context
   const [showPassword, setShowPassword] = useState(false);
