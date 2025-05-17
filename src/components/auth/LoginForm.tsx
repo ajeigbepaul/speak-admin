@@ -1,10 +1,8 @@
 
 "use client";
 
-import { useActionState, useEffect, useState } from 'react'; 
-import { useFormStatus } from "react-dom";
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginAction } from '@/actions/authActions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,10 +10,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, LogIn, Eye, EyeOff } from "lucide-react";
-import { mockAdminUser } from '@/lib/mockData'; // Import mockAdminUser for placeholder
+import { mockAdminUser } from '@/lib/mockData'; // Keep for placeholder email for now
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
+interface SubmitButtonProps {
+  pending: boolean;
+}
+
+function SubmitButton({ pending }: SubmitButtonProps) {
   return (
     <Button type="submit" className="w-full" disabled={pending}>
       {pending ? "Signing In..." : "Sign In"}
@@ -25,21 +26,39 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-  const [state, formAction] = useActionState(loginAction, { success: false, message: "" }); 
   const router = useRouter();
-  const { login } = useAuth(); 
+  const { login, user } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (state.success) {
-      const formData = new FormData(document.querySelector('form') as HTMLFormElement);
-      const email = formData.get("email") as string;
-      const password = formData.get("password") as string; // This is okay for client-side mock
-      login(email, password).then((loggedIn) => {
-        if(loggedIn) router.push('/'); 
-      });
+    if (user) {
+      router.push('/'); // Redirect if user is already logged in or after successful login
     }
-  }, [state, router, login]);
+  }, [user, router]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setIsLoading(true);
+    try {
+      await login(email, password);
+      // Successful login will trigger useEffect above to redirect
+    } catch (err: any) {
+      // Handle Firebase auth errors (e.g., auth/invalid-credential, auth/user-not-found)
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError("Invalid email or password.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+      console.error("Login failed:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Card className="w-full max-w-md shadow-xl">
@@ -55,12 +74,19 @@ export function LoginForm() {
         <CardTitle className="text-2xl font-bold">Speak Admin Center</CardTitle>
         <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
       </CardHeader>
-      <form action={formAction}>
+      <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            {/* Use the new default email as placeholder */}
-            <Input id="email" name="email" type="email" placeholder={mockAdminUser.email} required />
+            <Input 
+              id="email" 
+              name="email" 
+              type="email" 
+              placeholder={mockAdminUser.email} // Use new default email as placeholder
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required 
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
@@ -70,6 +96,8 @@ export function LoginForm() {
                 name="password" 
                 type={showPassword ? "text" : "password"} 
                 placeholder="••••••••" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required 
               />
               <Button 
@@ -84,16 +112,16 @@ export function LoginForm() {
               </Button>
             </div>
           </div>
-          {state.message && !state.success && (
+          {error && (
             <Alert variant="destructive">
               <Terminal className="h-4 w-4" />
               <AlertTitle>Login Failed</AlertTitle>
-              <AlertDescription>{state.message}</AlertDescription>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
         </CardContent>
         <CardFooter>
-          <SubmitButton />
+          <SubmitButton pending={isLoading} />
         </CardFooter>
       </form>
     </Card>
