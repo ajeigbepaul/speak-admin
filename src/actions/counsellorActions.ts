@@ -14,18 +14,18 @@ interface VerificationResult {
 }
 
 export async function updateCounsellorStatus(counsellorId: string, newStatus: CounsellorStatus): Promise<VerificationResult> {
-  console.log(`Attempting to update counsellor  ${counsellorId} to status ${newStatus} in Firestore.`);
+  console.log(`Attempting to update counsellor ${counsellorId} to status ${newStatus} in Firestore.`);
 
   try {
-    const counsellorDocRef = doc(db, "counselor", counsellorId); // Changed "counsellors" to "counselor"
+    const counsellorDocRef = doc(db, "counsellors", counsellorId); // Changed back to "counsellors"
 
     // Check if counsellor exists before updating (optional but good practice)
     const docSnap = await getDoc(counsellorDocRef);
     if (!docSnap.exists()) {
-      console.error(`Counsellor document with ID ${counsellorId} not found in 'counselor' collection.`);
+      console.error(`Counsellor document with ID ${counsellorId} not found in 'counsellors' collection.`);
       return {
         success: false,
-        message: `Counsellor with ID ${counsellorId} not found. Please ensure the collection name is correct.`,
+        message: `Counsellor with ID ${counsellorId} not found.`,
         counsellorId,
       };
     }

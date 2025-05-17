@@ -6,16 +6,18 @@ import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firesto
 
 async function getCounsellors(): Promise<Counsellor[]> {
   try {
-    const counsellorsCol = collection(db, 'counselor'); // Changed "counsellors" to "counselor"
+    const counsellorsCol = collection(db, 'counsellors'); // Changed back to "counsellors"
     const q = query(counsellorsCol, orderBy("createdAt", "desc"));
     const counsellorSnapshot = await getDocs(q);
     const counsellorsList = counsellorSnapshot.docs.map(doc => {
       const data = doc.data();
       
       let status: Counsellor['status'] = 'Pending'; // Default
-      if (data.status) { 
+      // Prioritize 'status' field if it exists
+      if (data.status && ["Pending", "Verified", "Rejected"].includes(data.status)) { 
         status = data.status as Counsellor['status'];
       } else if (typeof data.isVerified === 'boolean') { 
+        // Fallback to 'isVerified' if 'status' is not present or invalid
         status = data.isVerified ? 'Verified' : 'Pending';
       }
       
@@ -23,7 +25,6 @@ async function getCounsellors(): Promise<Counsellor[]> {
       if (data.createdAt && data.createdAt instanceof Timestamp) {
         createdAtString = data.createdAt.toDate().toISOString();
       } else if (typeof data.createdAt === 'string') { 
-        // If it's already a string, use it directly (though Timestamp is preferred from Firestore)
         try {
           createdAtString = new Date(data.createdAt).toISOString();
         } catch (e) {
@@ -38,7 +39,7 @@ async function getCounsellors(): Promise<Counsellor[]> {
         email: data.personalInfo?.email || 'N/A',
         phoneNumber: data.personalInfo?.phoneNumber,
         profilePic: data.personalInfo?.profilePic || `https://placehold.co/150x150.png?text=${(data.personalInfo?.fullName || 'N/A').charAt(0)}`,
-        specialization: data.professionalInfo?.occupation, // Mapped from occupation
+        specialization: data.professionalInfo?.occupation,
         createdAt: createdAtString,
         status: status,
       } as Counsellor;
