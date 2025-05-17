@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +60,15 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
     });
   };
 
+  const getStatusBadgeVariant = (status: Counsellor["status"]) => {
+    switch (status) {
+      case "Verified": return "default";
+      case "Pending": return "secondary";
+      case "Rejected": return "destructive";
+      default: return "outline";
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
@@ -85,7 +94,7 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
                   {counsellor.phoneNumber}
                 </p>
               )}
-              <Badge variant={counsellor.status === "Verified" ? "default" : counsellor.status === "Pending" ? "secondary" : "destructive"} className="mt-1">
+              <Badge variant={getStatusBadgeVariant(counsellor.status)} className="mt-1 capitalize">
                 {counsellor.status}
               </Badge>
             </div>
@@ -108,21 +117,25 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          {counsellor.status !== "Rejected" && (
+
+          {/* Reject Button: Show if status is Pending or Verified */}
+          {(counsellor.status === "Pending" || counsellor.status === "Verified") && (
             <Button 
               variant="destructive" 
               onClick={handleReject} 
-              disabled={isPending || counsellor.status === 'Rejected'}
+              disabled={isPending}
               className="bg-red-600 hover:bg-red-700"
             >
               <XCircle className="mr-2 h-4 w-4" />
               {isPending ? "Rejecting..." : "Reject"}
             </Button>
           )}
-          {counsellor.status !== "Verified" && (
+
+          {/* Verify Button: Show if status is Pending or Rejected */}
+          {(counsellor.status === "Pending" || counsellor.status === "Rejected") && (
             <Button 
               onClick={handleVerify} 
-              disabled={isPending || counsellor.status === 'Verified'}
+              disabled={isPending}
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
             >
               <CheckCircle className="mr-2 h-4 w-4" />
