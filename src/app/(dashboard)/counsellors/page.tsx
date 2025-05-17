@@ -6,16 +6,16 @@ import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firesto
 
 async function getCounsellors(): Promise<Counsellor[]> {
   try {
-    const counsellorsCol = collection(db, 'counselors'); // Corrected collection name to 'counsellors'
+    const counsellorsCol = collection(db, 'counselor'); // Changed "counsellors" to "counselor"
     const q = query(counsellorsCol, orderBy("createdAt", "desc"));
     const counsellorSnapshot = await getDocs(q);
     const counsellorsList = counsellorSnapshot.docs.map(doc => {
       const data = doc.data();
       
       let status: Counsellor['status'] = 'Pending'; // Default
-      if (data.status) { // If a root 'status' field exists
+      if (data.status) { 
         status = data.status as Counsellor['status'];
-      } else if (typeof data.isVerified === 'boolean') { // Fallback to 'isVerified'
+      } else if (typeof data.isVerified === 'boolean') { 
         status = data.isVerified ? 'Verified' : 'Pending';
       }
       
@@ -23,8 +23,14 @@ async function getCounsellors(): Promise<Counsellor[]> {
       if (data.createdAt && data.createdAt instanceof Timestamp) {
         createdAtString = data.createdAt.toDate().toISOString();
       } else if (typeof data.createdAt === 'string') { 
-        createdAtString = data.createdAt;
+        // If it's already a string, use it directly (though Timestamp is preferred from Firestore)
+        try {
+          createdAtString = new Date(data.createdAt).toISOString();
+        } catch (e) {
+          // keep fallback if string is not a valid date
+        }
       }
+
 
       return {
         id: doc.id,
@@ -32,7 +38,7 @@ async function getCounsellors(): Promise<Counsellor[]> {
         email: data.personalInfo?.email || 'N/A',
         phoneNumber: data.personalInfo?.phoneNumber,
         profilePic: data.personalInfo?.profilePic || `https://placehold.co/150x150.png?text=${(data.personalInfo?.fullName || 'N/A').charAt(0)}`,
-        specialization: data.professionalInfo?.occupation,
+        specialization: data.professionalInfo?.occupation, // Mapped from occupation
         createdAt: createdAtString,
         status: status,
       } as Counsellor;

@@ -31,7 +31,7 @@ interface VerificationDialogProps {
 export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusUpdate }: VerificationDialogProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-
+   console.log(counsellor,"Counsellor")
   if (!counsellor) return null;
 
   const handleVerify = () => {

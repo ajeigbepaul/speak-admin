@@ -22,7 +22,7 @@ const chatStatusChartConfig = {
 
 async function getCounsellorsForDashboard(): Promise<Counsellor[]> {
   try {
-    const counsellorsCol = collection(db, 'counsellors'); // Corrected collection name
+    const counsellorsCol = collection(db, 'counselor'); // Changed "counsellors" to "counselor"
     const q = query(counsellorsCol, orderBy("createdAt", "desc"));
     const counsellorSnapshot = await getDocs(q);
     const counsellorsList = counsellorSnapshot.docs.map(doc => {
@@ -39,7 +39,11 @@ async function getCounsellorsForDashboard(): Promise<Counsellor[]> {
       if (data.createdAt && data.createdAt instanceof Timestamp) {
         createdAtString = data.createdAt.toDate().toISOString();
       } else if (typeof data.createdAt === 'string') {
-        createdAtString = data.createdAt;
+         try {
+          createdAtString = new Date(data.createdAt).toISOString();
+        } catch (e) {
+          // keep fallback if string is not a valid date
+        }
       }
 
       return {
@@ -48,7 +52,7 @@ async function getCounsellorsForDashboard(): Promise<Counsellor[]> {
         email: data.personalInfo?.email || 'N/A',
         phoneNumber: data.personalInfo?.phoneNumber,
         profilePic: data.personalInfo?.profilePic || `https://placehold.co/150x150.png?text=${(data.personalInfo?.fullName || 'N/A').charAt(0)}`,
-        specialization: data.professionalInfo?.occupation,
+        specialization: data.professionalInfo?.occupation, // Mapped from occupation
         createdAt: createdAtString,
         status: status,
       } as Counsellor;
