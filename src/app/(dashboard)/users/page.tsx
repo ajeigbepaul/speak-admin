@@ -2,15 +2,47 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle } from "lucide-react";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
+import type { AppUser } from "@/lib/types";
+import { UserList } from "@/components/users/UserList"; // We'll create this component
 
-// Mock data for now - in a real app, this would come from a database
-const mockUsers = [
-  { id: "admin001", name: "Admin User", email: "pdave4krist@gmail.com", role: "superadmin", status: "Active" },
-  { id: "user002", name: "Jane Doe", email: "jane.doe@example.com", role: "admin", status: "Active" },
-  { id: "user003", name: "John Smith", email: "john.smith@example.com", role: "admin", status: "Invited" },
-];
+async function getUsers(): Promise<AppUser[]> {
+  try {
+    const usersCol = collection(db, 'users');
+    const q = query(usersCol, orderBy("createdAt", "desc"));
+    const usersSnapshot = await getDocs(q);
+    const usersList = usersSnapshot.docs.map(doc => {
+      const data = doc.data();
+      let createdAtString = new Date().toISOString(); // Fallback
+      if (data.createdAt && data.createdAt instanceof Timestamp) {
+        createdAtString = data.createdAt.toDate().toISOString();
+      } else if (typeof data.createdAt === 'string') {
+        try {
+          createdAtString = new Date(data.createdAt).toISOString();
+        } catch (e) {
+          // keep fallback
+        }
+      }
 
-export default function UserManagementPage() {
+      return {
+        uid: doc.id,
+        email: data.email || 'N/A',
+        role: data.role || 'admin', // Default to admin if role is missing
+        name: data.name, // Optional name
+        createdAt: createdAtString,
+      } as AppUser;
+    });
+    return usersList;
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return []; 
+  }
+}
+
+export default async function UserManagementPage() {
+  const users = await getUsers();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -31,23 +63,7 @@ export default function UserManagementPage() {
           <CardDescription>A list of all users in the system.</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Basic list for now, will be replaced with a table later */}
-          <ul className="space-y-2">
-            {mockUsers.map(user => (
-              <li key={user.id} className="flex justify-between items-center p-2 border-b last:border-b-0">
-                <div>
-                  <p className="font-medium">{user.name} <span className="text-xs text-muted-foreground">({user.role})</span></p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${user.status === "Active" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                  {user.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {mockUsers.length === 0 && (
-            <p className="text-center text-muted-foreground py-4">No users found.</p>
-          )}
+          <UserList users={users} />
         </CardContent>
       </Card>
     </div>

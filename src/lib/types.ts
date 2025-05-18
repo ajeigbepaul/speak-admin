@@ -15,32 +15,23 @@ export interface AppUser {
   uid: string; // Typically matches Firebase Auth UID
   email: string;
   role: UserRole;
-  name?: string;
-  createdAt: any; // Firestore Timestamp
+  name?: string; // Name might not always be present initially
+  createdAt: any; // Firestore Timestamp or ISO string after conversion
   // Add any other fields you store per user
 }
 
 export type CounsellorStatus = "Pending" | "Verified" | "Rejected";
 
 export interface Counsellor {
-  fullName: any;
-  email: any;
-  profilePic: string | undefined;
-  id: string;
-  personalInfo: {
-    fullName: string;
-    email: string;
-    phoneNumber?: string;
-    profilePic?: string;
-    address?: any; // Define further if needed
-  };
-  professionalInfo: {
-    occupation?: string; // This will be mapped to specialization
-    // Add other professional fields if they exist
-  };
+  id: string; // Document ID from Firestore
+  fullName: string; // from personalInfo.fullName
+  email: string; // from personalInfo.email
+  phoneNumber?: string; // from personalInfo.phoneNumber
+  profilePic?: string; // from personalInfo.profilePic
+  specialization?: string; // from professionalInfo.occupation
   createdAt: string; // ISO Date string, from root createdAt Firestore Timestamp
   updatedAt?: string; // ISO Date string, from root updatedAt Firestore Timestamp
-  isVerified: boolean; // Root level boolean
+  isVerified: boolean; // Root level boolean, determines status
   status: CounsellorStatus; // Derived from isVerified or a root status field
 }
 
