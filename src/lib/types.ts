@@ -30,16 +30,16 @@ export interface Counsellor {
     phoneNumber?: string;
     profilePic?: string;
   };
-  professionalInfo?: { // Made optional as it might not always be present
+  professionalInfo?: {
     occupation?: string;
   };
   createdAt: string; // ISO Date string, from root createdAt Firestore Timestamp
   updatedAt?: string; // ISO Date string, from root updatedAt Firestore Timestamp
   isVerified: boolean; // Root level boolean
   status: CounsellorStatus; // Derived from isVerified or a root status field
-  // Mapped fields for convenience, matching old structure for easier UI use
-  fullName: string; 
-  email: string; 
+  // Mapped fields for convenience
+  fullName: string;
+  email: string;
   phoneNumber?: string;
   profilePic?: string;
   specialization?: string;
@@ -61,9 +61,9 @@ export interface MonthlyData {
 
 // For the Chat Status Pie Chart
 export interface ChatStatusData {
-  name: "Pending" | "Active" | "Resolved"; // Matches keys in chatStatusChartConfig
+  name: "Pending" | "Active" | "Resolved";
   value: number;
-  fill?: string; // Optional, as ChartContainer can handle colors via config
+  fill?: string;
 }
 
 export type ChatSessionStatus = "Pending" | "Active" | "Resolved" | "ClosedByUser" | "ClosedByCounsellor";
@@ -78,26 +78,26 @@ export interface ChatSession {
   lastMessage?: string;
   userUnreadMessages?: number;
   counsellorUnreadMessages?: number;
-  // other relevant fields
 }
 
 
-export type NotificationType = "new_counsellor" | "chat_request" | "general";
+export type NotificationType = "new_counsellor_invited" | "counsellor_pending_verification" | "chat_request" | "general";
 
 export interface AppNotification {
-  id: string;
+  id: string; // Firestore document ID
   type: NotificationType;
   title: string;
   message: string;
-  timestamp: string; // ISO Date string
+  timestamp: any; // Firestore Timestamp, will be converted to Date on client
   read: boolean;
   link?: string;
+  // recipientUid?: string; // For targeted notifications, future enhancement
 }
 
 // Mock chat types for ViewUserDialog
 export interface MockChatMessage {
   id: string;
-  sender: 'user' | 'support' | 'other'; // 'other' could be a counsellor
+  sender: 'user' | 'support' | 'other';
   text: string;
   timestamp: string; // ISO Date string
 }
@@ -106,8 +106,8 @@ export interface MockChatMessage {
 export interface ActionResult {
   success: boolean;
   message: string;
-  error?: string; // Optional error details
-  data?: any; // Optional data to return (e.g. temporary password)
+  error?: string;
+  data?: any;
 }
 
 // Specific types for invite actions
@@ -124,6 +124,6 @@ export interface InviteCounselorInput {
 
 export interface SetInitialPasswordInput {
     email: string;
-    temporaryPassword?: string; // Could be used for an additional check if desired
+    temporaryPassword?: string;
     newPassword: string;
 }

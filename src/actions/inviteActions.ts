@@ -5,8 +5,8 @@ import { db, serverTimestamp } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, doc, setDoc } from "firebase/firestore";
 import type { ActionResult, InviteAdminOrUserInput, InviteCounselorInput, UserRole, CounsellorStatus } from "@/lib/types";
 import { revalidatePath } from "next/cache";
-import { sendMail } from "@/lib/email"; // Import the email utility
-import crypto from 'crypto'; // For generating random password
+import { sendMail } from "@/lib/email";
+import crypto from 'crypto';
 
 function generateTemporaryPassword(length = 12) {
   return crypto.randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
@@ -39,7 +39,6 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
       createdAt: serverTimestamp(),
     });
 
-    // Generate temporary password and send email
     const temporaryPassword = generateTemporaryPassword();
     const setPasswordLink = `${APP_BASE_URL}/set-initial-password?email=${encodeURIComponent(email)}&tempPass=${encodeURIComponent(temporaryPassword)}`;
     
@@ -51,10 +50,9 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
     });
 
     if (!mailResult.success) {
-        // Log error, but still consider Firestore operation a success for the admin's perspective
         console.error("Failed to send invitation email, but user record created:", mailResult.message);
          return { 
-            success: true, // Firestore record created
+            success: true,
             message: `${role.charAt(0).toUpperCase() + role.slice(1)} '${name}' invited. Firestore record created, but an error occurred sending the invitation email: ${mailResult.message}. Please provide them this link to set password: ${setPasswordLink} (Temp Pass: ${temporaryPassword})` 
         };
     }
@@ -93,7 +91,7 @@ export async function inviteCounselorAction(data: InviteCounselorInput): Promise
       return { success: false, message: `A counselor with email ${email} already exists or has been invited.` };
     }
 
-    await addDoc(counselorsRef, {
+    const newCounselorDocRef = await addDoc(counselorsRef, {
       personalInfo: {
         fullName: name,
         email: email,
@@ -105,9 +103,19 @@ export async function inviteCounselorAction(data: InviteCounselorInput): Promise
       updatedAt: serverTimestamp(),
     });
 
-    // Generate temporary password and send email
+    // Create a notification for the new counselor invitation
+    const notificationsRef = collection(db, "notifications");
+    await addDoc(notificationsRef, {
+      type: "new_counsellor_invited",
+      title: "New Counsellor Invited",
+      message: `${name} has been invited and is awaiting profile completion.`,
+      link: `/counsellors?action=verify&id=${newCounselorDocRef.id}`,
+      read: false,
+      timestamp: serverTimestamp(),
+    });
+
     const temporaryPassword = generateTemporaryPassword();
-    const setPasswordLink = `${APP_BASE_URL}/set-initial-password?email=${encodeURIComponent(email)}&tempPass=${encodeURIComponent(temporaryPassword)}&type=counselor`; // Added type for redirection logic later
+    const setPasswordLink = `${APP_BASE_URL}/set-initial-password?email=${encodeURIComponent(email)}&tempPass=${encodeURIComponent(temporaryPassword)}&type=counselor`;
 
     const mailResult = await sendMail({
       to: email,
@@ -119,17 +127,18 @@ export async function inviteCounselorAction(data: InviteCounselorInput): Promise
     if (!mailResult.success) {
         console.error("Failed to send invitation email, but counselor record created:", mailResult.message);
         return { 
-            success: true, // Firestore record created
+            success: true,
             message: `Counselor '${name}' invited. Firestore record created, but an error occurred sending the invitation email: ${mailResult.message}. Please provide them this link to set password: ${setPasswordLink} (Temp Pass: ${temporaryPassword})` 
         };
     }
 
     revalidatePath("/counsellors");
     revalidatePath("/invite");
+    // No path revalidation for /notifications as AppHeader uses onSnapshot
 
     return { 
       success: true, 
-      message: `Counselor '${name}' invited successfully. An email has been sent to ${email} with instructions to set their password and complete their profile.` 
+      message: `Counselor '${name}' invited successfully. An email has been sent to ${email} with instructions to set their password and complete their profile. A notification has been created.` 
     };
 
   } catch (error) {

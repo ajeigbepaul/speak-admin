@@ -1,10 +1,11 @@
 
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Bell, UserCircle, Moon, Sun } from "lucide-react";
+import { Bell, UserCircle, Moon, Sun, CheckCheck } from "lucide-react"; // Added CheckCheck
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,31 +13,101 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { mockNotifications } from "@/lib/mockData";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
+import type { AppNotification } from "@/lib/types";
+import { db } from "@/lib/firebase";
+import { collection, query, orderBy, limit, onSnapshot, Timestamp } from "firebase/firestore";
+import { markNotificationAsRead, markAllNotificationsAsRead } from "@/actions/notificationActions";
+import { useToast } from "@/hooks/use-toast";
 
 export function AppHeader({ pageTitle }: { pageTitle: string }) {
   const { user, logout } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    const notificationsRef = collection(db, "notifications");
+    const q = query(notificationsRef, orderBy("timestamp", "desc"), limit(10));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedNotifications = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          timestamp: data.timestamp, // Keep as Firestore Timestamp or convert if needed
+        } as AppNotification;
+      });
+      setNotifications(fetchedNotifications);
+      setUnreadNotificationsCount(fetchedNotifications.filter(n => !n.read).length);
+    }, (error) => {
+      console.error("Error fetching notifications:", error);
+      toast({ title: "Error", description: "Could not fetch notifications.", variant: "destructive" });
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
   
-  const unreadNotifications = mockNotifications.filter(n => !n.read).length;
+  const handleNotificationClick = async (notification: AppNotification) => {
+    startTransition(async () => {
+      if (!notification.read) {
+        await markNotificationAsRead(notification.id);
+        // Optimistic update can be done here if needed, but onSnapshot will refresh
+      }
+      if (notification.link) {
+        router.push(notification.link);
+      }
+    });
+  };
+
+  const handleMarkAllRead = async () => {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    if (unreadIds.length === 0) {
+      toast({ title: "No unread notifications", description: "All notifications are already marked as read.", variant: "default" });
+      return;
+    }
+    startTransition(async () => {
+      const result = await markAllNotificationsAsRead(unreadIds);
+      if (result.success) {
+        toast({ title: "Success", description: result.message, variant: "default" });
+        // Optimistic update or rely on onSnapshot
+      } else {
+        toast({ title: "Error", description: result.message, variant: "destructive" });
+      }
+    });
+  };
 
   const renderThemeToggleIcon = () => {
     if (!mounted) {
-      // Render a placeholder or nothing until mounted to avoid hydration mismatch
-      return <Moon className="h-5 w-5 opacity-50" />; // Default placeholder
+      return <Moon className="h-5 w-5 opacity-50" />;
     }
     return resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />;
+  };
+
+  const formatTimestamp = (timestamp: any) => {
+    if (!timestamp) return 'Just now';
+    if (timestamp instanceof Timestamp) {
+      return timestamp.toDate().toLocaleString();
+    }
+    // Fallback for older data or if it's already a string/number
+    try {
+      return new Date(timestamp).toLocaleString();
+    } catch (e) {
+      return 'Invalid date';
+    }
   };
 
   return (
@@ -57,30 +128,52 @@ export function AppHeader({ pageTitle }: { pageTitle: string }) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              {unreadNotifications > 0 && (
+              {unreadNotificationsCount > 0 && (
                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 min-w-0 p-0 flex items-center justify-center text-xs rounded-full">
-                  {unreadNotifications}
+                  {unreadNotificationsCount}
                 </Badge>
               )}
               <span className="sr-only">Notifications</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-80 max-h-[400px] overflow-y-auto">
+            <DropdownMenuLabel className="flex justify-between items-center">
+              Notifications
+              {notifications.filter(n => !n.read).length > 0 && (
+                 <Button variant="ghost" size="sm" onClick={handleMarkAllRead} disabled={isPending} className="text-xs h-auto p-1">
+                    <CheckCheck className="mr-1 h-3 w-3"/> Mark all read
+                </Button>
+              )}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {mockNotifications.slice(0,3).map(notif => (
-              <DropdownMenuItem key={notif.id} asChild>
-                <Link href={notif.link || "#"} className={`block p-2 hover:bg-muted ${!notif.read ? 'font-semibold': ''}`}>
-                  <p className="text-sm">{notif.title}</p>
-                  <p className="text-xs text-muted-foreground">{notif.message}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{new Date(notif.timestamp).toLocaleString()}</p>
-                </Link>
-              </DropdownMenuItem>
-            ))}
-             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <Link href="#" className="block p-2 text-center text-primary hover:underline">View all notifications</Link>
-            </DropdownMenuItem>
+            {notifications.length === 0 ? (
+              <DropdownMenuItem disabled className="text-center text-muted-foreground">No notifications</DropdownMenuItem>
+            ) : (
+              <DropdownMenuGroup>
+                {notifications.map(notif => (
+                  <DropdownMenuItem 
+                    key={notif.id} 
+                    onClick={() => handleNotificationClick(notif)}
+                    className={`cursor-pointer p-2 hover:bg-muted ${!notif.read ? 'font-semibold bg-muted/30' : ''}`}
+                    disabled={isPending}
+                  >
+                    <div>
+                      <p className="text-sm">{notif.title}</p>
+                      <p className="text-xs text-muted-foreground whitespace-normal">{notif.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{formatTimestamp(notif.timestamp)}</p>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            )}
+             {notifications.length > 5 && ( // Example: only show if many notifications
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                      <Link href="#" className="block p-2 text-center text-primary hover:underline">View all notifications</Link>
+                  </DropdownMenuItem>
+                </>
+             )}
           </DropdownMenuContent>
         </DropdownMenu>
 

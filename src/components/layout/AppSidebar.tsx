@@ -42,8 +42,8 @@ export function AppSidebar() {
     const fetchPendingCounsellorsCount = async () => {
       try {
         const counsellorsCol = collection(db, 'counselors');
-        // Query for documents where status is 'Pending'
-        const q = query(counsellorsCol, where("status", "==", "Pending" as CounsellorStatus));
+        // Query for documents where status is 'Pending' or 'Invited'
+        const q = query(counsellorsCol, where("status", "in", ["Pending", "Invited"] as CounsellorStatus[]));
         const snapshot = await getCountFromServer(q);
         setPendingCounsellorsActualCount(snapshot.data().count);
       } catch (error) {

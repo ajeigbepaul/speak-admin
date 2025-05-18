@@ -3,8 +3,8 @@
 
 import type { CounsellorStatus } from "@/lib/types";
 import { revalidatePath } from "next/cache";
-import { db } from "@/lib/firebase";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { db, serverTimestamp } from "@/lib/firebase"; // Added serverTimestamp
+import { doc, updateDoc, getDoc, collection, addDoc } from "firebase/firestore"; // Added collection, addDoc
 
 interface VerificationResult {
   success: boolean;
@@ -33,29 +33,45 @@ export async function updateCounsellorStatus(counsellorId: string, newStatus: Co
 
     const docSnap = await getDoc(counsellorDocRef);
     if (!docSnap.exists()) {
-      console.error(`[Action] updateCounsellorStatus: Counsellor document with ID '${trimmedCounsellorId}' not found in 'counsellors' collection. Path checked: ${counsellorDocRef.path}`);
+      console.error(`[Action] updateCounsellorStatus: Counsellor document with ID '${trimmedCounsellorId}' not found in 'counselors' collection. Path checked: ${counsellorDocRef.path}`);
       return {
         success: false,
-        message: `Counsellor with ID ${trimmedCounsellorId} not found. Please ensure the ID is correct and the document exists in the 'counsellors' collection.`,
+        message: `Counsellor with ID ${trimmedCounsellorId} not found. Please ensure the ID is correct and the document exists in the 'counselors' collection.`,
         counsellorId: trimmedCounsellorId,
       };
     }
+    const counsellorData = docSnap.data();
 
-    const updateData: { status: CounsellorStatus; isVerified?: boolean } = {
+    const updateData: { status: CounsellorStatus; isVerified?: boolean; updatedAt: any } = {
       status: newStatus,
+      updatedAt: serverTimestamp(),
     };
 
     if (newStatus === "Verified") {
       updateData.isVerified = true;
-    } else if (newStatus === "Pending" || newStatus === "Rejected") {
+    } else if (newStatus === "Pending" || newStatus === "Rejected" || newStatus === "Invited") {
       updateData.isVerified = false;
     }
 
     await updateDoc(counsellorDocRef, updateData);
 
+    // Create notification if status changes to "Pending"
+    if (newStatus === "Pending") {
+      const notificationsRef = collection(db, "notifications");
+      await addDoc(notificationsRef, {
+        type: "counsellor_pending_verification",
+        title: "Counsellor Awaiting Verification",
+        message: `${counsellorData.personalInfo?.fullName || 'A counsellor'} is now pending verification.`,
+        link: `/counsellors?action=verify&id=${trimmedCounsellorId}`,
+        read: false,
+        timestamp: serverTimestamp(),
+      });
+    }
+
     console.log(`[Action] updateCounsellorStatus: Counsellor '${trimmedCounsellorId}' status successfully updated to '${newStatus}' in Firestore.`);
     revalidatePath("/counsellors");
-    revalidatePath("/");
+    revalidatePath("/"); // For dashboard pending verifications card
+    // No path revalidation for /notifications as AppHeader uses onSnapshot
     
     return {
       success: true,
@@ -65,15 +81,10 @@ export async function updateCounsellorStatus(counsellorId: string, newStatus: Co
     };
   } catch (error) {
     console.error(`[Action] updateCounsellorStatus: Failed to update counsellor '${trimmedCounsellorId}' status in Firestore:`, error);
-    // It's good to provide a more specific error message if possible, but "Failed to update..." is a safe default.
-    // Check if error is a FirebaseError and has a code/message
     let errorMessage = "Failed to update counsellor status in the database due to an unexpected error.";
     if (error instanceof Error) {
         errorMessage = `Failed to update counsellor status: ${error.message}`;
     }
-    // For Firebase specific errors, you might check error.code
-    // if (error.code) { /* handle specific Firebase error codes */ }
-
     return {
       success: false,
       message: errorMessage,
