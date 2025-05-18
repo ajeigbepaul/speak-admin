@@ -31,6 +31,8 @@ export default function DashboardLayout({
       setPageTitle('Counsellor Management');
     } else if (pathname.startsWith('/users')) {
       setPageTitle('User Management');
+    } else if (pathname.startsWith('/invite')) {
+      setPageTitle('Invite User');
     }
     // Add more else if blocks for other pages
   }, [pathname]);

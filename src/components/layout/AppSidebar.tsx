@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, UserCheck, LogOut, UserCog } from "lucide-react"; 
+import { LayoutDashboard, UserCheck, LogOut, UserCog, UserPlus } from "lucide-react"; 
 
 // NEW IMPORTS for Firestore
 import React, { useState, useEffect } from 'react';
@@ -26,8 +26,9 @@ import type { CounsellorStatus } from "@/lib/types";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/counsellors", label: "Counsellors", icon: UserCheck, badgeKey: "pendingCounsellorsActual" }, // Updated badgeKey
+  { href: "/counsellors", label: "Counsellors", icon: UserCheck, badgeKey: "pendingCounsellorsActual" },
   { href: "/users", label: "User Management", icon: UserCog },
+  { href: "/invite", label: "Invite User", icon: UserPlus }, // New Invite User link
 ];
 
 export function AppSidebar() {

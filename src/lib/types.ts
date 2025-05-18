@@ -20,7 +20,7 @@ export interface AppUser {
   // Add any other fields you store per user
 }
 
-export type CounsellorStatus = "Pending" | "Verified" | "Rejected";
+export type CounsellorStatus = "Pending" | "Verified" | "Rejected" | "Invited";
 
 export interface Counsellor {
   id: string; // Document ID from Firestore
@@ -100,4 +100,23 @@ export interface MockChatMessage {
   sender: 'user' | 'support' | 'other'; // 'other' could be a counsellor
   text: string;
   timestamp: string; // ISO Date string
+}
+
+// General ActionResult for server actions
+export interface ActionResult {
+  success: boolean;
+  message: string;
+  error?: string; // Optional error details
+}
+
+// Specific types for invite actions
+export interface InviteAdminOrUserInput {
+  email: string;
+  name: string;
+  role: 'admin' | 'user';
+}
+
+export interface InviteCounselorInput {
+  email: string;
+  name: string;
 }

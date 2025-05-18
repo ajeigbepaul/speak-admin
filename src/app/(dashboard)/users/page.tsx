@@ -1,7 +1,5 @@
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, Timestamp, where } from "firebase/firestore";
 import type { AppUser, UserRole } from "@/lib/types";
@@ -58,12 +56,10 @@ export default async function UserManagementPage() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">User Management</h2>
           <p className="text-muted-foreground">
-            Invite new users and manage existing user roles and permissions.
+            Manage existing user roles and permissions.
           </p>
         </div>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" /> Invite User
-        </Button>
+        {/* "Invite User" button removed from here */}
       </div>
 
       <Card>
