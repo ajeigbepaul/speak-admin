@@ -10,12 +10,10 @@ import { UserList } from "@/components/users/UserList";
 async function getUsers(): Promise<AppUser[]> {
   try {
     const usersCol = collection(db, 'users');
-    // Query for users where role is 'admin' or 'superadmin'
-    // This ensures only administrative users are fetched for this page.
-    // Counselors, assuming they are in a different collection or have a different role, will be excluded.
+    // Query for users where role is 'admin', 'superadmin', or 'user'
     const q = query(
       usersCol, 
-      where("role", "in", ["admin", "superadmin"] as UserRole[]), 
+      where("role", "in", ["admin", "superadmin", "user"] as UserRole[]), 
       orderBy("createdAt", "desc")
     );
     const usersSnapshot = await getDocs(q);
@@ -33,7 +31,7 @@ async function getUsers(): Promise<AppUser[]> {
         }
       }
 
-      // Ensure role is one of the expected types, or it wouldn't have been fetched by the query
+      // Ensure role is one of the expected types
       const role = data.role as UserRole;
 
       return {
@@ -71,7 +69,7 @@ export default async function UserManagementPage() {
       <Card>
         <CardHeader>
           <CardTitle>Current Users</CardTitle>
-          <CardDescription>A list of all administrative users in the system.</CardDescription>
+          <CardDescription>A list of all administrative and regular users in the system.</CardDescription>
         </CardHeader>
         <CardContent>
           <UserList initialUsers={users} />

@@ -1,5 +1,5 @@
 
-export type UserRole = "superadmin" | "admin";
+export type UserRole = "superadmin" | "admin" | "user";
 
 // User type for AuthContext (simpler, focused on auth session)
 export interface User {
