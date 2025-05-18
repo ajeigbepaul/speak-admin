@@ -24,15 +24,25 @@ export type CounsellorStatus = "Pending" | "Verified" | "Rejected";
 
 export interface Counsellor {
   id: string; // Document ID from Firestore
-  fullName: string; // from personalInfo.fullName
-  email: string; // from personalInfo.email
-  phoneNumber?: string; // from personalInfo.phoneNumber
-  profilePic?: string; // from personalInfo.profilePic
-  specialization?: string; // from professionalInfo.occupation
+  personalInfo: {
+    fullName: string;
+    email: string;
+    phoneNumber?: string;
+    profilePic?: string;
+  };
+  professionalInfo?: { // Made optional as it might not always be present
+    occupation?: string;
+  };
   createdAt: string; // ISO Date string, from root createdAt Firestore Timestamp
   updatedAt?: string; // ISO Date string, from root updatedAt Firestore Timestamp
-  isVerified: boolean; // Root level boolean, determines status
+  isVerified: boolean; // Root level boolean
   status: CounsellorStatus; // Derived from isVerified or a root status field
+  // Mapped fields for convenience, matching old structure for easier UI use
+  fullName: string; 
+  email: string; 
+  phoneNumber?: string;
+  profilePic?: string;
+  specialization?: string;
 }
 
 export interface DashboardAnalytics {
@@ -82,4 +92,12 @@ export interface AppNotification {
   timestamp: string; // ISO Date string
   read: boolean;
   link?: string;
+}
+
+// Mock chat types for ViewUserDialog
+export interface MockChatMessage {
+  id: string;
+  sender: 'user' | 'support' | 'other'; // 'other' could be a counsellor
+  text: string;
+  timestamp: string; // ISO Date string
 }
