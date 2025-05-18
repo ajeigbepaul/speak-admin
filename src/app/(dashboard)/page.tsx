@@ -91,11 +91,11 @@ interface ChatStats {
 async function getChatStats(): Promise<ChatStats> {
   const stats: ChatStats = { pending: 0, active: 0, resolved: 0 };
   try {
-    const chatsCol = collection(db, 'chats'); // Assuming collection name is 'chats'
+    const chatsCol = collection(db, 'posts'); // Assuming collection name is 'chats'
     
-    const pendingQuery = query(chatsCol, where("status", "==", "Pending"));
-    const activeQuery = query(chatsCol, where("status", "==", "Active"));
-    const resolvedQuery = query(chatsCol, where("status", "==", "Resolved"));
+    const pendingQuery = query(chatsCol, where("status", "==", "pending"));
+    const activeQuery = query(chatsCol, where("status", "==", "active"));
+    const resolvedQuery = query(chatsCol, where("status", "==", "resolved"));
 
     const [pendingSnapshot, activeSnapshot, resolvedSnapshot] = await Promise.all([
       getCountFromServer(pendingQuery),

@@ -15,29 +15,54 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Users, UserCheck, LogOut, MessageSquare, UserCog } from "lucide-react"; // Changed UsersCog to UserCog
-import { mockNotifications } from "@/lib/mockData";
+import { LayoutDashboard, UserCheck, LogOut, UserCog } from "lucide-react"; 
+
+// NEW IMPORTS for Firestore
+import React, { useState, useEffect } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getCountFromServer } from 'firebase/firestore';
+import type { CounsellorStatus } from "@/lib/types";
+
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/counsellors", label: "Counsellors", icon: UserCheck, badgeKey: "pendingCounsellors" },
-  { href: "/users", label: "User Management", icon: UserCog }, // Changed UsersCog to UserCog
-  // Add more items as needed e.g. chats
-  // { href: "/chats", label: "Chats", icon: MessageSquare, badgeKey: "pendingChats" },
+  { href: "/counsellors", label: "Counsellors", icon: UserCheck, badgeKey: "pendingCounsellorsActual" }, // Updated badgeKey
+  { href: "/users", label: "User Management", icon: UserCog },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
 
-  // Example: Calculate pending counsellors count for badge
-  // In a real app, this data would come from an API or state management
-  const pendingCounsellorsCount = mockNotifications.filter(n => n.type === 'new_counsellor' && !n.read).length;
-  // const pendingChatsCount = 15; // Example
+  // State for the actual count of pending counsellors
+  const [pendingCounsellorsActualCount, setPendingCounsellorsActualCount] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const fetchPendingCounsellorsCount = async () => {
+      try {
+        const counsellorsCol = collection(db, 'counselors');
+        // Query for documents where status is 'Pending'
+        const q = query(counsellorsCol, where("status", "==", "Pending" as CounsellorStatus));
+        const snapshot = await getCountFromServer(q);
+        setPendingCounsellorsActualCount(snapshot.data().count);
+      } catch (error) {
+        console.error("Error fetching pending counsellors count for sidebar badge:", error);
+        setPendingCounsellorsActualCount(0); // Fallback to 0 on error
+      }
+    };
+
+    fetchPendingCounsellorsCount();
+    
+    // Note: getCountFromServer is a one-time fetch. 
+    // For real-time updates, you might consider Firestore listeners or periodic refetching.
+  }, []);
+
 
   const badges = {
-    pendingCounsellors: pendingCounsellorsCount > 0 ? pendingCounsellorsCount.toString() : undefined,
-    // pendingChats: pendingChatsCount > 0 ? pendingChatsCount.toString() : undefined,
+    // Use the new state for the actual count
+    pendingCounsellorsActual: pendingCounsellorsActualCount !== undefined && pendingCounsellorsActualCount > 0 
+                               ? pendingCounsellorsActualCount.toString() 
+                               : undefined,
   };
 
   return (

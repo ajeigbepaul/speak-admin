@@ -42,7 +42,7 @@ async function getCounsellors(): Promise<Counsellor[]> {
         specialization: data.professionalInfo?.occupation,
         createdAt: createdAtString,
         status: status,
-      } as Counsellor;
+      } as unknown as Counsellor;
     });
     return counsellorsList;
   } catch (error) {

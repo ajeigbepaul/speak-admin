@@ -23,6 +23,9 @@ export interface AppUser {
 export type CounsellorStatus = "Pending" | "Verified" | "Rejected";
 
 export interface Counsellor {
+  fullName: any;
+  email: any;
+  profilePic: string | undefined;
   id: string;
   personalInfo: {
     fullName: string;
