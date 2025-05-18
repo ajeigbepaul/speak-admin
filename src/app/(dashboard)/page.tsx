@@ -2,38 +2,38 @@
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AnalyticsChart } from "@/components/dashboard/AnalyticsChart";
 import { PendingVerificationsCard } from "@/components/dashboard/PendingVerificationsCard";
-import { mockDashboardAnalytics, mockMonthlyData, mockChatStatusData } from "@/lib/mockData";
-import type { Counsellor } from '@/lib/types';
+import { mockMonthlyData } from "@/lib/mockData"; // Keep this for now for the line chart
+import type { Counsellor, ChatStatusData, ChatSession, AppUser } from '@/lib/types';
 import { Users, UserCheck, MessageSquare, ListChecks } from "lucide-react";
 import type { ChartConfig } from "@/components/ui/chart";
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, Timestamp, where,getCountFromServer } from 'firebase/firestore';
 
 const monthlyChartConfig = {
   users: { label: "Users", color: "hsl(var(--chart-1))" },
   counsellors: { label: "Counsellors", color: "hsl(var(--chart-2))" },
 } satisfies ChartConfig;
 
+// This config should align with the `name` property in ChatStatusData
 const chatStatusChartConfig = {
   Pending: { label: "Pending", color: "hsl(var(--chart-1))" },
   Active: { label: "Active", color: "hsl(var(--chart-2))" },
   Resolved: { label: "Resolved", color: "hsl(var(--chart-3))" },
 } satisfies ChartConfig;
 
+
 async function getCounsellorsForDashboard(): Promise<Counsellor[]> {
   try {
-    const counsellorsCol = collection(db, 'counselors'); // Changed back to "counsellors"
+    const counsellorsCol = collection(db, 'counselors');
     const q = query(counsellorsCol, orderBy("createdAt", "desc"));
     const counsellorSnapshot = await getDocs(q);
     const counsellorsList = counsellorSnapshot.docs.map(doc => {
       const data = doc.data();
       
       let status: Counsellor['status'] = 'Pending';
-      // Prioritize 'status' field if it exists
       if (data.status && ["Pending", "Verified", "Rejected"].includes(data.status)) {
         status = data.status as Counsellor['status'];
-      } else if (typeof data.isVerified === 'boolean') {
-        // Fallback to 'isVerified' if 'status' is not present or invalid
+      } else { // Fallback to isVerified if status field is missing or invalid
         status = data.isVerified ? 'Verified' : 'Pending';
       }
       
@@ -44,18 +44,23 @@ async function getCounsellorsForDashboard(): Promise<Counsellor[]> {
          try {
           createdAtString = new Date(data.createdAt).toISOString();
         } catch (e) {
-          // keep fallback if string is not a valid date
+          // keep fallback
         }
       }
 
       return {
         id: doc.id,
-        fullName: data.personalInfo?.fullName || 'N/A',
-        email: data.personalInfo?.email || 'N/A',
-        phoneNumber: data.personalInfo?.phoneNumber,
-        profilePic: data.personalInfo?.profilePic || `https://placehold.co/150x150.png?text=${(data.personalInfo?.fullName || 'N/A').charAt(0)}`,
-        specialization: data.professionalInfo?.occupation,
+        personalInfo: {
+          fullName: data.personalInfo?.fullName || 'N/A',
+          email: data.personalInfo?.email || 'N/A',
+          phoneNumber: data.personalInfo?.phoneNumber,
+          profilePic: data.personalInfo?.profilePic || `https://placehold.co/150x150.png?text=${(data.personalInfo?.fullName || 'N/A').charAt(0)}`,
+        },
+        professionalInfo: {
+          occupation: data.professionalInfo?.occupation,
+        },
         createdAt: createdAtString,
+        isVerified: data.isVerified || false, // Ensure isVerified exists
         status: status,
       } as Counsellor;
     });
@@ -66,27 +71,77 @@ async function getCounsellorsForDashboard(): Promise<Counsellor[]> {
   }
 }
 
+async function getUsersCount(): Promise<number> {
+  try {
+    const usersCol = collection(db, 'users');
+    const snapshot = await getCountFromServer(usersCol);
+    return snapshot.data().count;
+  } catch (error) {
+    console.error("Error fetching users count:", error);
+    return 0;
+  }
+}
+
+interface ChatStats {
+  pending: number;
+  active: number;
+  resolved: number;
+}
+
+async function getChatStats(): Promise<ChatStats> {
+  const stats: ChatStats = { pending: 0, active: 0, resolved: 0 };
+  try {
+    const chatsCol = collection(db, 'chats'); // Assuming collection name is 'chats'
+    
+    const pendingQuery = query(chatsCol, where("status", "==", "Pending"));
+    const activeQuery = query(chatsCol, where("status", "==", "Active"));
+    const resolvedQuery = query(chatsCol, where("status", "==", "Resolved"));
+
+    const [pendingSnapshot, activeSnapshot, resolvedSnapshot] = await Promise.all([
+      getCountFromServer(pendingQuery),
+      getCountFromServer(activeQuery),
+      getCountFromServer(resolvedQuery)
+    ]);
+
+    stats.pending = pendingSnapshot.data().count;
+    stats.active = activeSnapshot.data().count;
+    stats.resolved = resolvedSnapshot.data().count;
+
+  } catch (error) {
+    console.error("Error fetching chat stats:", error);
+    // Return 0 for all if an error occurs
+  }
+  return stats;
+}
+
 
 export default async function DashboardPage() {
-  const analytics = mockDashboardAnalytics; 
-  const monthlyData = mockMonthlyData;
-  const chatStatusData = mockChatStatusData;
-  const counsellors = await getCounsellorsForDashboard(); 
+  const monthlyData = mockMonthlyData; // User & Counsellor Growth can still use mock for now
+  
+  const counsellors = await getCounsellorsForDashboard();
+  const totalUsersCount = await getUsersCount();
+  const chatStats = await getChatStats();
+
+  const chatStatusForPieChart: ChatStatusData[] = [
+    { name: 'Pending', value: chatStats.pending, fill: 'var(--color-chart-1)' },
+    { name: 'Active', value: chatStats.active, fill: 'var(--color-chart-2)' },
+    { name: 'Resolved', value: chatStats.resolved, fill: 'var(--color-chart-3)' },
+  ];
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <StatCard title="Total Users" value={analytics.totalUsers} icon={Users} description="Registered users on the platform" />
+        <StatCard title="Total Users" value={totalUsersCount} icon={Users} description="Registered users (from Firestore)" />
         <StatCard title="Total Counsellors" value={counsellors.length} icon={UserCheck} description="Counsellors from Firestore" />
-        <StatCard title="Pending Chats" value={analytics.pendingChatRequests} icon={MessageSquare} description="Awaiting counsellor response" />
-        <StatCard title="Active Chats" value={analytics.activeChats} icon={MessageSquare} description="Ongoing conversations" className="text-primary" />
-        <StatCard title="Resolved Cases" value={analytics.resolvedCases} icon={ListChecks} description="Successfully concluded sessions" />
+        <StatCard title="Pending Chats" value={chatStats.pending} icon={MessageSquare} description="Awaiting counsellor response" />
+        <StatCard title="Active Chats" value={chatStats.active} icon={MessageSquare} description="Ongoing conversations" className="text-primary" />
+        <StatCard title="Resolved Cases" value={chatStats.resolved} icon={ListChecks} description="Successfully concluded sessions" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <AnalyticsChart
           title="User & Counsellor Growth"
-          description="Monthly registration trends"
+          description="Monthly registration trends (mock data)"
           data={monthlyData}
           chartType="line"
           config={monthlyChartConfig}
@@ -96,16 +151,16 @@ export default async function DashboardPage() {
         />
         <AnalyticsChart
           title="Chat Status Overview"
-          description="Distribution of chat statuses"
-          data={chatStatusData}
+          description="Distribution of chat statuses (from Firestore)"
+          data={chatStatusForPieChart}
           chartType="pie"
           config={chatStatusChartConfig}
-          dataKeys={[{name: "value"}]}
+          dataKeys={[{name: "value"}]} // This tells the pie chart to use the 'value' field from data items
         />
       </div>
       
       <div className="grid gap-6 md:grid-cols-1">
-         <PendingVerificationsCard counsellors={counsellors} />
+         <PendingVerificationsCard counsellors={counsellors.filter(c => c.status === 'Pending')} />
       </div>
     </div>
   );
