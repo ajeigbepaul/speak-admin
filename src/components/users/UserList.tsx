@@ -1,13 +1,13 @@
 
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useEffect } from "react";
 import type { AppUser } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MoreHorizontal, Eye, Trash2, ShieldCheck, UserCircle } from "lucide-react";
+import { MoreHorizontal, Eye, Trash2, ShieldCheck } from "lucide-react"; // Removed UserCircle as it was unused
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,8 +24,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog"; // AlertDialogTrigger was unused
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { deleteAppUser } from "@/actions/userActions";
@@ -36,7 +35,15 @@ interface UserListProps {
 }
 
 export function UserList({ initialUsers }: UserListProps) {
-  const [users, setUsers] = useState<AppUser[]>(initialUsers);
+  const [users, setUsers] = useState<AppUser[]>(() => {
+    if (Array.isArray(initialUsers)) {
+      return initialUsers;
+    }
+    // This case should ideally not happen if UserManagementPage passes data correctly.
+    console.warn("UserList: initialUsers prop was not an array. Defaulting to an empty array. Received:", initialUsers);
+    return [];
+  });
+
   const [selectedUserForView, setSelectedUserForView] = useState<AppUser | null>(null);
   const [isViewUserDialogOpen, setIsViewUserDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
@@ -46,6 +53,14 @@ export function UserList({ initialUsers }: UserListProps) {
   const { toast } = useToast();
 
   const superAdminEmail = process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
+
+  useEffect(() => {
+    if (!superAdminEmail) {
+      console.error("CRITICAL: NEXT_PUBLIC_SUPERADMIN_EMAIL environment variable is not set. User list functionality will be impaired.");
+    }
+  }, [superAdminEmail]);
+
+  // 'users' is now guaranteed to be an array.
   const superAdminUser = users.find(u => u.email === superAdminEmail && u.role === 'superadmin');
   const otherUsers = users.filter(u => !(u.email === superAdminEmail && u.role === 'superadmin'));
 
@@ -67,7 +82,7 @@ export function UserList({ initialUsers }: UserListProps) {
         toast({ title: "Action Restricted", description: "You cannot delete your own account.", variant: "destructive"});
         return;
     }
-    if (user.role === 'superadmin') {
+    if (user.role === 'superadmin' && user.email === superAdminEmail) {
         toast({ title: "Action Restricted", description: "Superadmin account cannot be deleted from here.", variant: "destructive"});
         return;
     }
@@ -90,9 +105,27 @@ export function UserList({ initialUsers }: UserListProps) {
     });
   };
 
-  if (users.length === 0 && !superAdminUser) {
+  const formatUserCreationDate = (createdAt: any): string => {
+    if (!createdAt) return 'N/A';
+    try {
+      if (typeof createdAt === 'string') {
+        return new Date(createdAt).toLocaleDateString();
+      } else if (createdAt.seconds && typeof createdAt.toDate === 'function') {
+        // Firestore Timestamp
+        return createdAt.toDate().toLocaleDateString();
+      } else if (createdAt instanceof Date) {
+        return createdAt.toLocaleDateString();
+      }
+    } catch (e) {
+      console.error("Error formatting date:", createdAt, e);
+    }
+    return 'Invalid Date';
+  };
+  
+  // This condition handles the case where there are no users at all.
+  if (users.length === 0) {
     return (
-      <p className="text-center text-muted-foreground py-4">No users found.</p>
+      <p className="text-center text-muted-foreground py-4">No users found in the system.</p>
     );
   }
 
@@ -104,7 +137,7 @@ export function UserList({ initialUsers }: UserListProps) {
             <Avatar className="h-16 w-16 border-2 border-primary">
               <AvatarImage src={undefined} alt={superAdminUser.name || superAdminUser.email} data-ai-hint="admin avatar" />
               <AvatarFallback className="text-2xl bg-primary/20 text-primary">
-                {superAdminUser.name ? superAdminUser.name.charAt(0).toUpperCase() : superAdminUser.email.charAt(0).toUpperCase()}
+                {superAdminUser.name ? superAdminUser.name.charAt(0).toUpperCase() : (superAdminUser.email || 'S').charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
@@ -114,7 +147,7 @@ export function UserList({ initialUsers }: UserListProps) {
               </CardTitle>
               <CardDescription>{superAdminUser.email} - Super Administrator</CardDescription>
                <p className="text-xs text-muted-foreground mt-1">
-                Joined: {superAdminUser.createdAt ? new Date(superAdminUser.createdAt.seconds ? superAdminUser.createdAt.toDate() : superAdminUser.createdAt).toLocaleDateString() : 'N/A'}
+                Joined: {formatUserCreationDate(superAdminUser.createdAt)}
               </p>
             </div>
           </CardHeader>
@@ -135,7 +168,7 @@ export function UserList({ initialUsers }: UserListProps) {
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={undefined} alt={user.name || user.email} data-ai-hint="person avatar"/>
                   <AvatarFallback>
-                    {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                    {user.name ? user.name.charAt(0).toUpperCase() : (user.email || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -158,7 +191,8 @@ export function UserList({ initialUsers }: UserListProps) {
                     <DropdownMenuItem onClick={() => handleViewUser(user)}>
                       <Eye className="mr-2 h-4 w-4" /> View Details
                     </DropdownMenuItem>
-                    {currentUser?.email !== user.email && user.role !== 'superadmin' && (
+                    {/* Ensure current user cannot delete themselves & superadmin cannot be deleted by others from this list */}
+                    {currentUser?.uid !== user.uid && !(user.role === 'superadmin' && user.email === superAdminEmail) && (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
@@ -177,11 +211,16 @@ export function UserList({ initialUsers }: UserListProps) {
           ))}
         </ul>
       )}
-      {otherUsers.length === 0 && !superAdminUser && (
+      
+      {/* Display this message if there's a superAdmin but no other users */}
+      {superAdminUser && otherUsers.length === 0 && (
          <p className="text-center text-muted-foreground py-4">No other admin users found.</p>
       )}
-       {otherUsers.length === 0 && superAdminUser && (
-         <p className="text-center text-muted-foreground py-4">No other admin users found.</p>
+      {/* Display this if there's no superAdmin (shouldn't happen if one is configured and fetched) AND no other users */}
+      {!superAdminUser && otherUsers.length === 0 && users.length > 0 && ( 
+         // This implies users array has users, but none match superAdmin criteria and none are "otherUsers"
+         // This state is unusual but covered. If users.length is 0, the top "No users found" handles it.
+         <p className="text-center text-muted-foreground py-4">No users match display criteria.</p>
       )}
 
 
@@ -212,3 +251,4 @@ export function UserList({ initialUsers }: UserListProps) {
     </div>
   );
 }
+
