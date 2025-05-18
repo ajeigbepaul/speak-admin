@@ -28,7 +28,7 @@ export async function updateCounsellorStatus(counsellorId: string, newStatus: Co
   const trimmedCounsellorId = counsellorId.trim();
 
   try {
-    const counsellorDocRef = doc(db, "counsellors", trimmedCounsellorId);
+    const counsellorDocRef = doc(db, "counselors", trimmedCounsellorId);
     console.log(`[Action] updateCounsellorStatus: Firestore document reference path being checked: ${counsellorDocRef.path}`);
 
     const docSnap = await getDoc(counsellorDocRef);

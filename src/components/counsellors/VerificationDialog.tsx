@@ -31,10 +31,12 @@ interface VerificationDialogProps {
 export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusUpdate }: VerificationDialogProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-   console.log(counsellor,"Counsellor")
+   console.log(counsellor,"Verify-Counsellor")
+   console.log(counsellor?.id,"Counsellor")
   if (!counsellor) return null;
 
   const handleVerify = () => {
+    console.log("handleVerify called. Counsellor ID:", counsellor?.id);
     startTransition(async () => {
       const result = await updateCounsellorStatus(counsellor.id, "Verified");
       if (result.success) {
