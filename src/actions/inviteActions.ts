@@ -22,12 +22,6 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
     if (!querySnapshot.empty) {
       return { success: false, message: `A user with email ${email} already exists.` };
     }
-
-    // Create a new document in 'users' collection
-    // For simplicity, we are not creating a Firebase Auth user here.
-    // That would be a subsequent step for the invited user or via Admin SDK.
-    // We will use email as document ID for predictability if needed, or let Firestore auto-generate.
-    // Using auto-generated ID is generally safer to avoid conflicts if email changes.
     
     const newUserDocRef = doc(collection(db, "users")); // Creates a ref with an auto-generated ID
     await setDoc(newUserDocRef, {
@@ -36,7 +30,7 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
       name: name,
       role: role as UserRole,
       createdAt: serverTimestamp(),
-      // You might want to add an 'status: "invited"' field here
+      // You might want to add an 'status: "invited"' field here if more detail is needed
     });
 
     revalidatePath("/users");
@@ -82,7 +76,7 @@ export async function inviteCounselorAction(data: InviteCounselorInput): Promise
       },
       professionalInfo: {}, // Empty object, can be filled later
       isVerified: false,
-      status: "Invited" as CounsellorStatus, // New status to differentiate
+      status: "Invited" as CounsellorStatus, // Set status to "Invited"
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -104,3 +98,4 @@ export async function inviteCounselorAction(data: InviteCounselorInput): Promise
     return { success: false, message: errorMessage, error: String(error) };
   }
 }
+

@@ -166,7 +166,7 @@ export function InviteForm() {
         
         <FormDescription>
             {inviteType === "adminOrUser" && "Invited Admins/Users will need to register using the provided email to activate their account."}
-            {inviteType === "counselor" && "Invited Counselors will appear in the 'Pending' list and will need to complete their profile."}
+            {inviteType === "counselor" && "Invited Counselors will appear in the counselor list with 'Invited' status and will need to complete their profile and registration process (typically via a separate counselor portal/app)."}
         </FormDescription>
 
         <Button type="submit" disabled={isPending} className="w-full">
@@ -180,3 +180,4 @@ export function InviteForm() {
     </Form>
   );
 }
+
