@@ -107,6 +107,7 @@ export interface ActionResult {
   success: boolean;
   message: string;
   error?: string; // Optional error details
+  data?: any; // Optional data to return (e.g. temporary password)
 }
 
 // Specific types for invite actions
@@ -119,4 +120,10 @@ export interface InviteAdminOrUserInput {
 export interface InviteCounselorInput {
   email: string;
   name: string;
+}
+
+export interface SetInitialPasswordInput {
+    email: string;
+    temporaryPassword?: string; // Could be used for an additional check if desired
+    newPassword: string;
 }
