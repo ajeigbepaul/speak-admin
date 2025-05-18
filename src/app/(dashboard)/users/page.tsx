@@ -3,17 +3,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
-import type { AppUser } from "@/lib/types";
-import { UserList } from "@/components/users/UserList"; // We'll create this component
+import { collection, getDocs, query, orderBy, Timestamp, where } from "firebase/firestore";
+import type { AppUser, UserRole } from "@/lib/types";
+import { UserList } from "@/components/users/UserList"; 
 
 async function getUsers(): Promise<AppUser[]> {
   try {
     const usersCol = collection(db, 'users');
-    const q = query(usersCol, orderBy("createdAt", "desc"));
+    // Query for users where role is 'admin' or 'superadmin'
+    const q = query(
+      usersCol, 
+      where("role", "in", ["admin", "superadmin"] as UserRole[]), 
+      orderBy("createdAt", "desc")
+    );
     const usersSnapshot = await getDocs(q);
     const usersList = usersSnapshot.docs.map(doc => {
       const data = doc.data();
+      
       let createdAtString = new Date().toISOString(); // Fallback
       if (data.createdAt && data.createdAt instanceof Timestamp) {
         createdAtString = data.createdAt.toDate().toISOString();
@@ -25,11 +31,14 @@ async function getUsers(): Promise<AppUser[]> {
         }
       }
 
+      // Ensure role is one of the expected types, or it wouldn't have been fetched by the query
+      const role = data.role as UserRole;
+
       return {
         uid: doc.id,
         email: data.email || 'N/A',
-        role: data.role || 'admin', // Default to admin if role is missing
-        name: data.name, // Optional name
+        role: role, 
+        name: data.name, 
         createdAt: createdAtString,
       } as AppUser;
     });
@@ -60,10 +69,10 @@ export default async function UserManagementPage() {
       <Card>
         <CardHeader>
           <CardTitle>Current Users</CardTitle>
-          <CardDescription>A list of all users in the system.</CardDescription>
+          <CardDescription>A list of all administrative users in the system.</CardDescription>
         </CardHeader>
         <CardContent>
-          <UserList users={users} />
+          <UserList initialUsers={users} />
         </CardContent>
       </Card>
     </div>

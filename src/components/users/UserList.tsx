@@ -192,7 +192,7 @@ export function UserList({ initialUsers }: UserListProps) {
                       <Eye className="mr-2 h-4 w-4" /> View Details
                     </DropdownMenuItem>
                     {/* Ensure current user cannot delete themselves & superadmin cannot be deleted by others from this list */}
-                    {currentUser?.uid !== user.uid && !(user.role === 'superadmin' && user.email === superAdminEmail) && (
+                    { !(user.role === 'superadmin' && user.email === superAdminEmail) && (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
