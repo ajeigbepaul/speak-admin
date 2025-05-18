@@ -11,6 +11,8 @@ async function getUsers(): Promise<AppUser[]> {
   try {
     const usersCol = collection(db, 'users');
     // Query for users where role is 'admin' or 'superadmin'
+    // This ensures only administrative users are fetched for this page.
+    // Counselors, assuming they are in a different collection or have a different role, will be excluded.
     const q = query(
       usersCol, 
       where("role", "in", ["admin", "superadmin"] as UserRole[]), 
