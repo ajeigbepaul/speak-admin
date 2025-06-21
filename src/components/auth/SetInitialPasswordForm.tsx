@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FormEvent, useEffect } from 'react';
@@ -41,6 +40,7 @@ export function SetInitialPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loadingParams, setLoadingParams] = useState(true);
 
   useEffect(() => {
     const emailFromQuery = searchParams.get('email');
@@ -59,6 +59,7 @@ export function SetInitialPasswordForm() {
     if (typeFromQuery) {
         setInviteType(typeFromQuery);
     }
+    setLoadingParams(false);
   }, [searchParams, toast]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -93,8 +94,7 @@ export function SetInitialPasswordForm() {
 
       // TODO: Redirect to profile completion for counselors, or login for admins/users
       if (inviteType === 'counselor') {
-        // router.push(`/complete-profile?email=${encodeURIComponent(email)}`); // Example for counselor next step
-        router.push('/login'); // For now, redirect all to login
+        router.push(`/complete-profile?email=${encodeURIComponent(email)}`); // Redirect to profile completion for counselor
       } else {
         router.push('/login');
       }
@@ -123,7 +123,20 @@ export function SetInitialPasswordForm() {
     }
   };
   
-  if (!email && !isLoading) { // Show error early if email is missing and not just loading params
+  if (loadingParams) {
+    return (
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader>
+          <CardTitle>Loading...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center">Preparing your invitation link...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!email && !isLoading && !loadingParams) { // Show error early if email is missing and not just loading params
     return (
          <Card className="w-full max-w-md shadow-xl">
             <CardHeader>

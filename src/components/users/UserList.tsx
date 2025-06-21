@@ -1,13 +1,14 @@
-
 "use client";
 
-import React, { useState, useTransition, useEffect } from "react";
+import React, { useState, useTransition, useEffect, useMemo } from "react";
 import type { AppUser } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MoreHorizontal, Eye, Trash2, ShieldCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MoreHorizontal, Eye, Trash2, ShieldCheck, Search, Filter, Users, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +30,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { deleteAppUser } from "@/actions/userActions";
 import { ViewUserDialog } from "./ViewUserDialog";
+import Link from "next/link";
 
 interface UserListProps {
   initialUsers: AppUser[];
@@ -43,6 +45,8 @@ export function UserList({ initialUsers }: UserListProps) {
     return [];
   });
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [selectedUserForView, setSelectedUserForView] = useState<AppUser | null>(null);
   const [isViewUserDialogOpen, setIsViewUserDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
@@ -62,11 +66,22 @@ export function UserList({ initialUsers }: UserListProps) {
   const superAdminUser = users.find(u => u.email === superAdminEmail && u.role === 'superadmin');
   const otherUsers = users.filter(u => !(u.email === superAdminEmail && u.role === 'superadmin'));
 
+  // Filter users based on search and role
+  const filteredUsers = useMemo(() => {
+    return otherUsers.filter((user) => {
+      const matchesSearch = 
+        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+  }, [otherUsers, searchTerm, roleFilter]);
+
   const getRoleBadgeVariant = (role: AppUser["role"]) => {
     switch (role) {
       case "superadmin": return "destructive";
       case "admin": return "default";
-      case "user": return "secondary"; // Added style for 'user' role
+      case "user": return "secondary";
       default: return "outline";
     }
   };
@@ -118,12 +133,48 @@ export function UserList({ initialUsers }: UserListProps) {
   
   if (users.length === 0) {
     return (
-      <p className="text-center text-muted-foreground py-4">No users found in the system.</p>
+      <div className="text-center py-12">
+        <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">No users found</h3>
+        <p className="text-muted-foreground mb-4">Get started by inviting your first user.</p>
+        <Link href="/invite">
+          <Button>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Invite User
+          </Button>
+        </Link>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Search and filter controls */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search users by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <Filter className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Filter by role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="superadmin">Super Admin</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="user">User</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Super admin card */}
       {superAdminUser && (
         <Card className="mb-6 border-primary shadow-lg bg-gradient-to-r from-primary/5 via-card to-card">
           <CardHeader className="flex flex-row items-center gap-4 pb-2">
@@ -150,12 +201,13 @@ export function UserList({ initialUsers }: UserListProps) {
         </Card>
       )}
 
-      {otherUsers.length > 0 && (
-        <ul className="space-y-3">
-          {otherUsers.map((user) => (
-            <li
+      {/* Other users list */}
+      {filteredUsers.length > 0 ? (
+        <div className="space-y-3">
+          {filteredUsers.map((user) => (
+            <div
               key={user.uid}
-              className="flex items-center justify-between p-3 rounded-md border hover:bg-muted/50 transition-colors"
+              className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
@@ -165,8 +217,11 @@ export function UserList({ initialUsers }: UserListProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium text-sm">{user.name || 'N/A'}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                  <p className="font-medium">{user.name || 'N/A'}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Joined: {formatUserCreationDate(user.createdAt)}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -199,19 +254,20 @@ export function UserList({ initialUsers }: UserListProps) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">
+            {searchTerm || roleFilter !== "all" 
+              ? "No users match your search criteria." 
+              : "No other users found in the system."
+            }
+          </p>
+        </div>
       )}
       
-      {superAdminUser && otherUsers.length === 0 && (
-         <p className="text-center text-muted-foreground py-4">No other users found.</p>
-      )}
-      {!superAdminUser && otherUsers.length === 0 && users.length > 0 && ( 
-         <p className="text-center text-muted-foreground py-4">No users match display criteria.</p>
-      )}
-
-
       <ViewUserDialog
         user={selectedUserForView}
         isOpen={isViewUserDialogOpen}

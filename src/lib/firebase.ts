@@ -2,6 +2,7 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore, serverTimestamp as fsServerTimestamp } from "firebase/firestore"; // Added serverTimestamp
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 // Firebase configuration using environment variables
 const firebaseConfig = {
@@ -38,5 +39,6 @@ if (!getApps().length) {
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const serverTimestamp = fsServerTimestamp; // Export serverTimestamp
+const storage: FirebaseStorage = getStorage(app);
 
-export { app, auth, db, serverTimestamp };
+export { app, auth, db, serverTimestamp, storage };

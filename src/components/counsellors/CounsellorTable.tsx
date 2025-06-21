@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useTransition, useEffect, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -12,11 +11,12 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import type { Counsellor } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VerificationDialog } from "./VerificationDialog";
-import { MoreHorizontal, Search, UserCheck, UserX, Clock } from "lucide-react";
+import { MoreHorizontal, Search, Filter, UserCheck, Clock, UserX, UserPlus, Users } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +24,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSearchParams, useRouter } from 'next/navigation';
+import { deleteDoc, doc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/firebase";
 
 interface CounsellorTableProps {
   initialCounsellors: Counsellor[];
@@ -35,6 +38,8 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
   const [filterStatus, setFilterStatus] = useState<Counsellor["status"] | "All">("All");
   const [selectedCounsellor, setSelectedCounsellor] = useState<Counsellor | null>(null);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -52,12 +57,13 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
     }
   }, [searchParams, counsellors, router]);
 
-
+  // Filter counsellors based on search and status
   const filteredCounsellors = useMemo(() => {
     return counsellors.filter((counsellor) => {
       const matchesSearch =
         counsellor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        counsellor.email.toLowerCase().includes(searchTerm.toLowerCase());
+        counsellor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (counsellor.specialization || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === "All" || counsellor.status === filterStatus;
       return matchesSearch && matchesStatus;
     });
@@ -70,9 +76,19 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
 
   const handleStatusUpdate = (counsellorId: string, newStatus: Counsellor["status"]) => {
     setCounsellors(prev => prev.map(c => c.id === counsellorId ? { ...c, status: newStatus } : c));
-    // Also update initialCounsellors if it's used elsewhere or for re-filtering, though typically state drives UI
-    const updatedInitialCounsellors = initialCounsellors.map(c => c.id === counsellorId ? { ...c, status: newStatus } : c);
-    // If initialCounsellors is not meant to be mutable from here, this line might not be needed or handled differently.
+  };
+
+  const handleDelete = async (counsellorId: string) => {
+    if (!window.confirm("Are you sure you want to delete this counsellor? This action cannot be undone.")) return;
+    startTransition(async () => {
+      try {
+        await deleteDoc(doc(db, "counselors", counsellorId));
+        setCounsellors(prev => prev.filter(c => c.id !== counsellorId));
+        toast({ title: "Deleted", description: "Counsellor deleted successfully.", variant: "default" });
+      } catch (err) {
+        toast({ title: "Error", description: "Failed to delete counsellor.", variant: "destructive" });
+      }
+    });
   };
   
   const getStatusBadgeVariant = (status: Counsellor["status"]) => {
@@ -80,6 +96,7 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
       case "Verified": return "default";
       case "Pending": return "secondary";
       case "Rejected": return "destructive";
+      case "Invited": return "outline";
       default: return "outline";
     }
   };
@@ -89,6 +106,7 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
       case "Verified": return <UserCheck className="mr-2 h-4 w-4 text-green-600" />;
       case "Pending": return <Clock className="mr-2 h-4 w-4 text-yellow-600" />;
       case "Rejected": return <UserX className="mr-2 h-4 w-4 text-red-600" />;
+      case "Invited": return <UserPlus className="mr-2 h-4 w-4 text-blue-600" />;
       default: return null;
     }
   }
@@ -98,39 +116,55 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
     setCounsellors(initialCounsellors);
   }, [initialCounsellors]);
 
+  if (counsellors.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">No counsellors found</h3>
+        <p className="text-muted-foreground mb-4">Get started by inviting your first counsellor.</p>
+        <Button onClick={() => router.push('/invite')}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Invite Counsellor
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-2 justify-between items-center">
-        <div className="relative w-full sm:w-auto sm:min-w-[300px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      {/* Search and filter controls */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            type="search"
-            placeholder="Search by name or email..."
+            placeholder="Search by name, email, or specialization..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 w-full"
+            className="pl-10"
           />
         </div>
-        <div className="flex gap-2">
-          {(["All", "Pending", "Verified", "Rejected"] as const).map((status) => (
-            <Button
-              key={status}
-              variant={filterStatus === status ? "default" : "outline"}
-              onClick={() => setFilterStatus(status)}
-              size="sm"
-            >
-              {status}
-            </Button>
-          ))}
-        </div>
+        <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as Counsellor["status"] | "All")}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <Filter className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Status</SelectItem>
+            <SelectItem value="Invited">Invited</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Verified">Verified</SelectItem>
+            <SelectItem value="Rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
       <div className="rounded-md border shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead className="hidden lg:table-cell">Registered</TableHead>
+              <TableHead className="hidden lg:table-cell">Specialization</TableHead>
+              <TableHead className="hidden md:table-cell">Registered</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -151,7 +185,14 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">{new Date(counsellor.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    <span className="text-sm text-muted-foreground">
+                      {counsellor.specialization || 'Not specified'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {new Date(counsellor.createdAt).toLocaleDateString()}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(counsellor.status)} className="capitalize">
                       {getStatusIcon(counsellor.status)}
@@ -170,6 +211,13 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
                         <DropdownMenuItem onClick={() => handleOpenVerificationDialog(counsellor)}>
                           View Details / Verify
                         </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDelete(counsellor.id)} 
+                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                          disabled={isPending}
+                        >
+                          Delete
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -177,14 +225,20 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center"> {/* Adjusted colSpan */}
-                  No counsellors found.
+                <TableCell colSpan={5} className="h-24 text-center">
+                  <div className="text-muted-foreground">
+                    {searchTerm || filterStatus !== "All" 
+                      ? "No counsellors match your search criteria." 
+                      : "No counsellors found in the system."
+                    }
+                  </div>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+      
       <VerificationDialog
         counsellor={selectedCounsellor}
         isOpen={isVerificationDialogOpen}

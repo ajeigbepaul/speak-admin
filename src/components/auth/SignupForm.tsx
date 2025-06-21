@@ -91,7 +91,7 @@ export function SignupForm() {
             description: "Superadmin account created and configured.",
             variant: "default",
           });
-          router.push('/dashboard'); // Redirect directly to dashboard
+          router.push('/'); // Redirect directly to dashboard
         } else {
           // Role setting failed. This is a critical issue.
           // Ideally, you might want to delete the Firebase Auth user here or provide manual cleanup instructions.

@@ -1,27 +1,29 @@
-
 import { CounsellorTable } from '@/components/counsellors/CounsellorTable';
 import type { Counsellor } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { UserCheck, UserPlus } from "lucide-react";
+import Link from "next/link";
+import { CounsellorStatsCards } from "@/components/dashboard/CounsellorStatsCards";
 
 async function getCounsellors(): Promise<Counsellor[]> {
   try {
-    const counsellorsCol = collection(db, 'counselors'); // Changed back to "counsellors"
+    const counsellorsCol = collection(db, 'counselors');
     const q = query(counsellorsCol, orderBy("createdAt", "desc"));
     const counsellorSnapshot = await getDocs(q);
     const counsellorsList = counsellorSnapshot.docs.map(doc => {
       const data = doc.data();
       
-      let status: Counsellor['status'] = 'Pending'; // Default
-      // Prioritize 'status' field if it exists
-      if (data.status && ["Pending", "Verified", "Rejected"].includes(data.status)) { 
+      let status: Counsellor['status'] = 'Pending';
+      if (data.status && ["Pending", "Verified", "Rejected", "Invited"].includes(data.status)) { 
         status = data.status as Counsellor['status'];
       } else if (typeof data.isVerified === 'boolean') { 
-        // Fallback to 'isVerified' if 'status' is not present or invalid
         status = data.isVerified ? 'Verified' : 'Pending';
       }
       
-      let createdAtString = new Date().toISOString(); // Fallback
+      let createdAtString = new Date().toISOString();
       if (data.createdAt && data.createdAt instanceof Timestamp) {
         createdAtString = data.createdAt.toDate().toISOString();
       } else if (typeof data.createdAt === 'string') { 
@@ -31,7 +33,6 @@ async function getCounsellors(): Promise<Counsellor[]> {
           // keep fallback if string is not a valid date
         }
       }
-
 
       return {
         id: doc.id,
@@ -55,14 +56,41 @@ export default async function CounsellorsPage() {
   const counsellors = await getCounsellors();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Counsellor Management</h2>
-        <p className="text-muted-foreground">
-          View, verify, and manage counsellor profiles from Firestore.
-        </p>
+    <div className="space-y-8">
+      {/* Header with quick action */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Counsellor Management</h1>
+          <p className="text-muted-foreground">
+            Manage counsellor profiles, verifications, and system access.
+          </p>
+        </div>
+        <Link href="/invite">
+          <Button className="bg-primary text-white">
+            <UserPlus className="mr-2 h-4 w-4" />
+            Invite Counsellor
+          </Button>
+        </Link>
       </div>
-      <CounsellorTable initialCounsellors={counsellors} />
+
+      {/* Real-time Counsellor statistics */}
+      <CounsellorStatsCards />
+
+      {/* Counsellor list */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserCheck className="h-5 w-5" />
+            Counsellor Profiles
+          </CardTitle>
+          <CardDescription>
+            Review and manage counsellor applications, verifications, and profiles. Click on any counsellor to view details or perform actions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CounsellorTable initialCounsellors={counsellors} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
