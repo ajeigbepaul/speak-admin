@@ -1,4 +1,3 @@
-
 "use server";
 
 import nodemailer from "nodemailer";
@@ -10,16 +9,43 @@ interface MailOptions {
   html: string;
 }
 
-// Ensure these are set in your .env.local
+// Email configuration - set these in your .env.local file
 const emailHost = process.env.EMAIL_HOST;
-const emailPort = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : 587;
+const emailPort = process.env.EMAIL_PORT
+  ? parseInt(process.env.EMAIL_PORT, 10)
+  : 587;
 const emailUser = process.env.EMAIL_USER;
 const emailPass = process.env.EMAIL_PASS;
-const emailFrom = process.env.EMAIL_FROM || '"Speak Admin" <noreply@example.com>';
+const emailFrom =
+  process.env.EMAIL_FROM || '"Speak Admin" <noreply@example.com>';
 
 let transporter: nodemailer.Transporter | null = null;
 
-if (emailHost && emailUser && emailPass) {
+// Support for Gmail integration
+if (
+  emailHost &&
+  emailUser &&
+  emailPass &&
+  (emailHost === "gmail" || emailHost === "smtp.gmail.com")
+) {
+  // Use Gmail service
+  transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: emailUser,
+      pass: emailPass,
+    },
+  });
+
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.error("Gmail service configuration error:", error);
+    } else {
+      console.log("Gmail server is ready to send messages");
+    }
+  });
+} else if (emailHost && emailUser && emailPass) {
+  // Use custom SMTP (e.g., Mailtrap or other)
   transporter = nodemailer.createTransport({
     host: emailHost,
     port: emailPort,
@@ -29,40 +55,43 @@ if (emailHost && emailUser && emailPass) {
       pass: emailPass,
     },
   });
+
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.error("Email service configuration error:", error);
+    } else {
+      console.log("Email server is ready to send messages");
+    }
+  });
 } else {
   console.warn(
-    "Email service is not configured. Please set EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, and EMAIL_FROM in your .env.local file. Emails will not be sent."
+    "Email service is not configured. Please set the following environment variables in your .env.local file:\n" +
+      "EMAIL_HOST=gmail (for Gmail integration) or smtp.gmail.com (for Gmail SMTP) or your SMTP server\n" +
+      "EMAIL_PORT=587 (or 465 for SSL, not needed for Gmail service)\n" +
+      "EMAIL_USER=your-email@gmail.com\n" +
+      "EMAIL_PASS=your-app-password\n" +
+      "EMAIL_FROM=Speak Admin <noreply@yourdomain.com>\n\n" +
+      "For Gmail, you'll need to:\n" +
+      "1. Enable 2-factor authentication\n" +
+      "2. Generate an App Password\n" +
+      "3. Use the App Password as EMAIL_PASS\n\n" +
+      "Emails will not be sent until configuration is complete."
   );
-  // Fallback to Ethereal if no config provided (for local dev convenience, will log to console)
-  // This part will attempt to create a test account if no other config is found.
-  // In a real scenario, you might want to disable this or make it more explicit.
-  nodemailer.createTestAccount((err, account) => {
-    if (err) {
-      console.error("Failed to create a test email account for Ethereal:", err);
-      return;
-    }
-    console.log("Ethereal test account created. Credentials:");
-    console.log("User:", account.user);
-    console.log("Pass:", account.pass);
-    console.log("Preview URL:", nodemailer.getTestMessageUrl({path:''})); // Dummy call to satisfy type
-
-    transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-            user: account.user, // generated ethereal user
-            pass: account.pass, // generated ethereal password
-        },
-    });
-     console.log("Nodemailer configured with Ethereal for testing. Check console for credentials and preview URLs.");
-  });
-
 }
 
-export async function sendMail({ to, subject, text, html }: MailOptions): Promise<{success: boolean; message: string; previewUrl?: string | false }> {
+export async function sendMail({
+  to,
+  subject,
+  text,
+  html,
+}: MailOptions): Promise<{
+  success: boolean;
+  message: string;
+  previewUrl?: string | false;
+}> {
   if (!transporter) {
-    const message = "Email service is not properly configured. Email not sent.";
+    const message =
+      "Email service is not properly configured. Please check your environment variables.";
     console.error(message);
     return { success: false, message };
   }
@@ -77,16 +106,19 @@ export async function sendMail({ to, subject, text, html }: MailOptions): Promis
     });
 
     console.log("Message sent: %s", info.messageId);
+
+    // Only show preview URL for test services
     const previewUrl = nodemailer.getTestMessageUrl(info);
     if (previewUrl) {
-        console.log("Preview URL: %s", previewUrl);
+      console.log("Preview URL: %s", previewUrl);
     }
+
     return { success: true, message: "Email sent successfully.", previewUrl };
   } catch (error) {
     console.error("Error sending email:", error);
     let errorMessage = "Failed to send email.";
     if (error instanceof Error) {
-        errorMessage = `Failed to send email: ${error.message}`;
+      errorMessage = `Failed to send email: ${error.message}`;
     }
     return { success: false, message: errorMessage };
   }
