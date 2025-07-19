@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, Timestamp, where, getCountFromServer } from "firebase/firestore";
 import type { AppUser, UserRole } from "@/lib/types";
-import { UserList } from "@/components/users/UserList"; 
+import { UserList } from "@/components/admins/UserList"; 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, UserPlus, Shield, UserCheck } from "lucide-react";
@@ -84,15 +84,15 @@ export default async function UserManagementPage() {
       {/* Header with stats and quick action */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">User Management</h1>
+          <h1 className="text-3xl font-bold mb-2">Admin management</h1>
           <p className="text-muted-foreground">
             Manage user roles, permissions, and system access.
           </p>
         </div>
-        <Link href="/invite">
+        <Link href="/invite?userType=admin">
           <Button className="bg-primary text-white">
             <UserPlus className="mr-2 h-4 w-4" />
-            Invite User
+            Invite Admin
           </Button>
         </Link>
       </div>

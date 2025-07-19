@@ -7,20 +7,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { inviteAdminOrUserAction, inviteCounselorAction } from "@/actions/inviteActions";
-import type { UserRole } from "@/lib/types";
-import { Send, UserPlus, Briefcase } from "lucide-react";
+import { inviteAdminOrUserAction } from "@/actions/inviteActions";
+import { Send } from "lucide-react";
 
 const inviteUserSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   inviteType: z.enum(["adminOrUser", "counselor"], { required_error: "Please select an invitation type." }),
-  role: z.enum(["admin", "user"]).optional(),
+  role: z.enum(["admin", "user"],{ required_error: "Please select a role." }),
 }).refine(data => {
   if (data.inviteType === "adminOrUser" && !data.role) {
     return false; // Role is required if inviteType is adminOrUser
@@ -33,7 +30,7 @@ const inviteUserSchema = z.object({
 
 type InviteUserFormValues = z.infer<typeof inviteUserSchema>;
 
-export function InviteForm() {
+export function InviteAdminForm() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -42,28 +39,20 @@ export function InviteForm() {
     defaultValues: {
       email: "",
       name: "",
-      inviteType: undefined, 
+      inviteType: 'adminOrUser', 
       role: undefined,
     },
   });
 
-  const inviteType = form.watch("inviteType");
-
   const onSubmit: SubmitHandler<InviteUserFormValues> = async (data) => {
     startTransition(async () => {
       let result;
-      if (data.inviteType === "adminOrUser") {
-        if (!data.role) {
+    
+      if (!data.role) {
             toast({ title: "Error", description: "Role is required for admin/user invite.", variant: "destructive" });
             return;
         }
         result = await inviteAdminOrUserAction({ email: data.email, name: data.name, role: data.role });
-      } else if (data.inviteType === "counselor") {
-        result = await inviteCounselorAction({ email: data.email, name: data.name });
-      } else {
-        toast({ title: "Error", description: "Invalid invitation type.", variant: "destructive" });
-        return;
-      }
 
       if (result.success) {
         toast({ title: "Success", description: result.message, variant: "default" });
@@ -104,49 +93,12 @@ export function InviteForm() {
             </FormItem>
           )}
         />
-
-        <FormField
-          control={form.control}
-          name="inviteType"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Invite As</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex flex-col space-y-1 md:flex-row md:space-y-0 md:space-x-4"
-                >
-                  <FormItem className="flex items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="adminOrUser" />
-                    </FormControl>
-                    <FormLabel className="font-normal flex items-center">
-                      <UserPlus className="mr-2 h-4 w-4 text-primary" /> Admin / User
-                    </FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="counselor" />
-                    </FormControl>
-                    <FormLabel className="font-normal flex items-center">
-                      <Briefcase className="mr-2 h-4 w-4 text-accent" /> Counselor
-                    </FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {inviteType === "adminOrUser" && (
           <FormField
             control={form.control}
             name="role"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Assign Role (for Admin/User)</FormLabel>
+                <FormLabel>Assign Role</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -155,24 +107,23 @@ export function InviteForm() {
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="user">Observer</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
+
         
         <FormDescription>
-            {inviteType === "adminOrUser" && "Invited Admins/Users will need to register using the provided email to activate their account."}
-            {inviteType === "counselor" && "Invited Counselors will appear in the counselor list with 'Invited' status and will need to complete their profile and registration process (typically via a separate counselor portal/app)."}
+            { "Invited Admins/admins will need to register using the provided email to activate their account."}
         </FormDescription>
 
         <Button type="submit" disabled={isPending} className="w-full">
           {isPending ? "Sending Invitation..." : (
             <>
-              <Send className="mr-2 h-4 w-4" /> Send Invitation
+              <Send className="mr-2 h-4 w-4" /> Invite
             </>
           )}
         </Button>
@@ -180,4 +131,3 @@ export function InviteForm() {
     </Form>
   );
 }
-

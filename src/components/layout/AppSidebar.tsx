@@ -27,8 +27,8 @@ import type { CounsellorStatus } from "@/lib/types";
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/counsellors", label: "Counsellors", icon: UserCheck, badgeKey: "pendingCounsellorsActual" },
-  { href: "/users", label: "User Management", icon: UserCog },
-  { href: "/invite", label: "Invite User", icon: UserPlus }, // New Invite User link
+  { href: "/admins", label: "Admins", icon: UserCog },
+  // { href: "/invite", label: "Invite Admin", icon: UserPlus }, // New Invite Admin link
 ];
 
 export function AppSidebar() {

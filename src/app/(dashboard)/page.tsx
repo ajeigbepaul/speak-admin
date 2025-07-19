@@ -138,7 +138,7 @@ export default async function DashboardPage() {
        
         <Welcome />
         <div className="flex items-center gap-4">
-          <Link href="/invite">
+          <Link href="/invite?userType=counselor">
             <Button className="bg-primary text-white">+ Invite Counsellor</Button>
           </Link>
          
@@ -147,7 +147,7 @@ export default async function DashboardPage() {
 
       {/* Stat cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <Link href="/users" className="cursor-pointer">
+        <Link href="/admins" className="cursor-pointer">
           <StatCard title="Total Users" value={totalUsersCount} icon={Users} description="Registered users (from Firestore)" />
         </Link>
         <Link href="/counsellors" className="cursor-pointer">

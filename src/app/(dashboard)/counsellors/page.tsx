@@ -65,7 +65,7 @@ export default async function CounsellorsPage() {
             Manage counsellor profiles, verifications, and system access.
           </p>
         </div>
-        <Link href="/invite">
+        <Link href="/invite?userType=counselor">
           <Button className="bg-primary text-white">
             <UserPlus className="mr-2 h-4 w-4" />
             Invite Counsellor
