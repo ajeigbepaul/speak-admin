@@ -137,10 +137,10 @@ export function UserList({ initialUsers }: UserListProps) {
         <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">No users found</h3>
         <p className="text-muted-foreground mb-4">Get started by inviting your first user.</p>
-        <Link href="/invite">
+        <Link href="/invite?userType=admin">
           <Button>
             <UserPlus className="mr-2 h-4 w-4" />
-            Invite User
+            Invite Admin
           </Button>
         </Link>
       </div>
@@ -169,7 +169,7 @@ export function UserList({ initialUsers }: UserListProps) {
             <SelectItem value="all">All Roles</SelectItem>
             <SelectItem value="superadmin">Super Admin</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="user">User</SelectItem>
+            <SelectItem value="user">Observer</SelectItem>
           </SelectContent>
         </Select>
       </div>

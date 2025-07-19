@@ -92,7 +92,7 @@ export function SetInitialPasswordForm() {
         variant: "default",
       });
 
-      // TODO: Redirect to profile completion for counselors, or login for admins/users
+      // TODO: Redirect to profile completion for counselors, or login for admins/admins
       if (inviteType === 'counselor') {
         router.push(`/complete-profile?email=${encodeURIComponent(email)}`); // Redirect to profile completion for counselor
       } else {

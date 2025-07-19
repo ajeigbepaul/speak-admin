@@ -122,7 +122,7 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
         <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">No counsellors found</h3>
         <p className="text-muted-foreground mb-4">Get started by inviting your first counsellor.</p>
-        <Button onClick={() => router.push('/invite')}>
+        <Button onClick={() => router.push('/invite?userType=counselor')}>
           <UserPlus className="mr-2 h-4 w-4" />
           Invite Counsellor
         </Button>

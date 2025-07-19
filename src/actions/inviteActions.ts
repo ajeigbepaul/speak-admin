@@ -57,7 +57,7 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
         };
     }
     
-    revalidatePath("/users");
+    revalidatePath("/admins");
     revalidatePath("/invite");
 
     return { 

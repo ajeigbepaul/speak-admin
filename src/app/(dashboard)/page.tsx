@@ -8,8 +8,8 @@ import type { ChartConfig } from "@/components/ui/chart";
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, Timestamp, where,getCountFromServer } from 'firebase/firestore';
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
+import Welcome from "@/components/dashboard/Welcome";
 
 const monthlyChartConfig = {
   users: { label: "Users", color: "hsl(var(--chart-1))" },
@@ -120,9 +120,12 @@ async function getChatStats(): Promise<ChatStats> {
 export default async function DashboardPage() {
   const monthlyData = mockMonthlyData; // User & Counsellor Growth can still use mock for now
   
+  // const {user:admin} = useAuth()
   const counsellors = await getCounsellorsForDashboard();
   const totalUsersCount = await getUsersCount();
   const chatStats = await getChatStats();
+
+  console.log(counsellors,"counsellors counsellors")
 
   const chatStatusForPieChart: ChatStatusData[] = [
     { name: 'Pending', value: chatStats.pending, fill: 'var(--color-chart-1)' },
@@ -134,24 +137,19 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       {/* Header with welcome and quick action */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
-        <div>
-          <h1 className="text-3xl font-bold mb-1">Welcome, Admin</h1>
-          <p className="text-muted-foreground">Here's what's happening on your platform today.</p>
-        </div>
+       
+        <Welcome />
         <div className="flex items-center gap-4">
-          <Link href="/invite">
+          <Link href="/invite?userType=counselor">
             <Button className="bg-primary text-white">+ Invite Counsellor</Button>
           </Link>
-          <Avatar>
-            <AvatarImage src="/avatar.png" alt="Admin Avatar" />
-            <AvatarFallback>A</AvatarFallback>
-          </Avatar>
+         
         </div>
       </div>
 
       {/* Stat cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <Link href="/users" className="cursor-pointer">
+        <Link href="/admins" className="cursor-pointer">
           <StatCard title="Total Users" value={totalUsersCount} icon={Users} description="Registered users (from Firestore)" />
         </Link>
         <Link href="/counsellors" className="cursor-pointer">
@@ -198,7 +196,7 @@ export default async function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <div>
           <h2 className="text-xl font-semibold mb-2">Pending Verifications</h2>
-          <PendingVerificationsCard counsellors={counsellors.filter(c => c.status === 'Pending')} />
+          <PendingVerificationsCard counsellors={counsellors} />
         </div>
         <div>
           <h2 className="text-xl font-semibold mb-2">Recent Activity</h2>

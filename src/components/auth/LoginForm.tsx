@@ -72,7 +72,7 @@ export function LoginForm() {
             <path d="M16 10h.01"></path>
           </svg>
         </div>
-        <CardTitle className="text-2xl font-bold">Speak Admin Center</CardTitle>
+        <CardTitle className="text-2xl font-bold">Speak Admin Dashboard</CardTitle>
         <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -83,7 +83,7 @@ export function LoginForm() {
               id="email" 
               name="email" 
               type="email" 
-              placeholder={superAdminEmail || mockAdminUser.email} // Use superAdminEmail as placeholder
+              placeholder={'Enter your email'} // Use superAdminEmail as placeholder
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required 
@@ -96,7 +96,7 @@ export function LoginForm() {
                 id="password" 
                 name="password" 
                 type={showPassword ? "text" : "password"} 
-                placeholder="••••••••" 
+                placeholder="Enter your password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
@@ -123,12 +123,12 @@ export function LoginForm() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <SubmitButton pending={isSubmitting} />
-          {superAdminEmail && ( // Only show signup link if superAdminEmail is configured
+          {/* {superAdminEmail && ( // Only show signup link if superAdminEmail is configured
             <Button variant="link" size="sm" onClick={() => router.push('/signup')} className="w-full">
               <UserPlus className="mr-2 h-4 w-4" />
               Create Superadmin Account (Initial Setup)
             </Button>
-          )}
+          )} */}
         </CardFooter>
       </form>
     </Card>
