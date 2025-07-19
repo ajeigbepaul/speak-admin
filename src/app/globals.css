@@ -1,3 +1,6 @@
+
+
+/* ================ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -38,7 +41,7 @@ body {
     --sidebar-background: 260 60% 35%; /* Deep Purple - Primary color */
     --sidebar-foreground: 0 0% 100%; /* White */
     --sidebar-primary: 0 0% 100%; /* White - For active item text color */
-    --sidebar-primary-foreground: 260 60% 30%; /* Darker purple - For active item background */
+    --sidebar-primary-foreground: 260 60% 35%; /* Darker purple - For active item background */
     --sidebar-accent: 260 60% 40%; /* Slightly lighter purple for hover */
     --sidebar-accent-foreground: 0 0% 100%; /* White */
     --sidebar-border: 260 60% 30%; /* Darker purple for borders within sidebar */
@@ -72,14 +75,15 @@ body {
     --chart-5: 270 50% 70%;
 
     /* Dark Sidebar specific theme variables */
-    --sidebar-background: 260 60% 30%; /* Darker Deep Purple */
+    --sidebar-background: 220 9% 12%; /* Even darker gray */
     --sidebar-foreground: 216 25% 96%; /* Light gray text */
     --sidebar-primary: 260 60% 45%; /* Lighter purple from dark theme primary */
-    --sidebar-primary-foreground: 0 0% 100%; /* White text */
+    --sidebar-primary-foreground: 220 9% 12%; /* Even darker gray */
     --sidebar-accent: 260 60% 35%; /* Slightly lighter dark purple for hover */
     --sidebar-accent-foreground: 216 25% 96%; /* Light gray text */
     --sidebar-border: 260 60% 25%; /* Darker purple for borders within sidebar */
     --sidebar-ring: 260 60% 45%; /* Lighter purple for ring in dark sidebar */
+    
   }
 }
 
