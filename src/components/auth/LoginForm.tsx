@@ -72,7 +72,7 @@ export function LoginForm() {
             <path d="M16 10h.01"></path>
           </svg>
         </div>
-        <CardTitle className="text-2xl font-bold">Speak Admin Center</CardTitle>
+        <CardTitle className="text-2xl font-bold">Speak Admin Dashboard</CardTitle>
         <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -83,7 +83,7 @@ export function LoginForm() {
               id="email" 
               name="email" 
               type="email" 
-              placeholder={superAdminEmail || mockAdminUser.email} // Use superAdminEmail as placeholder
+              placeholder={'Enter your email'} // Use superAdminEmail as placeholder
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required 
@@ -96,7 +96,7 @@ export function LoginForm() {
                 id="password" 
                 name="password" 
                 type={showPassword ? "text" : "password"} 
-                placeholder="••••••••" 
+                placeholder="Enter your password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
