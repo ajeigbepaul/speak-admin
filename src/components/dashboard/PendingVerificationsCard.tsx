@@ -42,12 +42,12 @@ export function PendingVerificationsCard({ counsellors, className }: PendingVeri
                 <li key={counsellor.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={counsellor.profilePic} alt={counsellor.fullName} data-ai-hint="person avatar" />
-                      <AvatarFallback>{counsellor.fullName?.charAt(0) || 'C'}</AvatarFallback>
+                      <AvatarImage src={counsellor.personalInfo.profilePic} alt={counsellor.personalInfo.fullName} data-ai-hint="person avatar" />
+                      <AvatarFallback>{counsellor.personalInfo.fullName?.charAt(0) || 'C'}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium text-sm">{counsellor.fullName}</p>
-                      <p className="text-xs text-muted-foreground">{counsellor.email}</p>
+                      <p className="font-medium text-sm">{counsellor.personalInfo.fullName}</p>
+                      <p className="text-xs text-muted-foreground">{counsellor.personalInfo.email}</p>
                     </div>
                   </div>
                   <Button asChild variant="outline" size="sm">

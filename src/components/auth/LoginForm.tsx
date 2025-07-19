@@ -123,12 +123,12 @@ export function LoginForm() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <SubmitButton pending={isSubmitting} />
-          {superAdminEmail && ( // Only show signup link if superAdminEmail is configured
+          {/* {superAdminEmail && ( // Only show signup link if superAdminEmail is configured
             <Button variant="link" size="sm" onClick={() => router.push('/signup')} className="w-full">
               <UserPlus className="mr-2 h-4 w-4" />
               Create Superadmin Account (Initial Setup)
             </Button>
-          )}
+          )} */}
         </CardFooter>
       </form>
     </Card>

@@ -125,6 +125,8 @@ export default async function DashboardPage() {
   const totalUsersCount = await getUsersCount();
   const chatStats = await getChatStats();
 
+  console.log(counsellors,"counsellors counsellors")
+
   const chatStatusForPieChart: ChatStatusData[] = [
     { name: 'Pending', value: chatStats.pending, fill: 'var(--color-chart-1)' },
     { name: 'Active', value: chatStats.active, fill: 'var(--color-chart-2)' },
@@ -194,7 +196,7 @@ export default async function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <div>
           <h2 className="text-xl font-semibold mb-2">Pending Verifications</h2>
-          <PendingVerificationsCard counsellors={counsellors.filter(c => c.status === 'Pending')} />
+          <PendingVerificationsCard counsellors={counsellors} />
         </div>
         <div>
           <h2 className="text-xl font-semibold mb-2">Recent Activity</h2>
