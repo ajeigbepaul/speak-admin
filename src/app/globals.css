@@ -14,7 +14,7 @@ body {
     --card-foreground: 220 9% 26%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 9% 26%;
-    --primary: 190 37% 44%; /* Calm Blue #468B97 */
+    --primary: 260 60% 35%; /* Deep Purple #5C2D91 */
     --primary-foreground: 0 0% 100%; /* White */
     --secondary: 216 25% 90%; /* Slightly darker gray for secondary elements */
     --secondary-foreground: 220 9% 26%;
@@ -26,8 +26,8 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 216 25% 88%;
     --input: 216 25% 88%;
-    --ring: 190 37% 44%; /* Primary color for focus rings */
-    --chart-1: 190 37% 44%; /* Primary */
+    --ring: 260 60% 35%; /* Deep Purple for focus rings */
+    --chart-1: 260 60% 35%; /* Deep Purple */
     --chart-2: 106 34% 67%; /* Accent */
     --chart-3: 210 30% 50%; /* A complementary blue/gray */
     --chart-4: 30 80% 60%; /* An orange for contrast */
@@ -35,13 +35,13 @@ body {
     --radius: 0.5rem;
 
     /* Sidebar specific theme variables */
-    --sidebar-background: 190 37% 44%; /* Calm Blue - Primary color */
+    --sidebar-background: 260 60% 35%; /* Deep Purple - Primary color */
     --sidebar-foreground: 0 0% 100%; /* White */
     --sidebar-primary: 0 0% 100%; /* White - For active item text color */
-    --sidebar-primary-foreground: 190 37% 38%; /* Darker blue - For active item background */
-    --sidebar-accent: 190 37% 50%; /* Slightly lighter blue for hover */
+    --sidebar-primary-foreground: 260 60% 30%; /* Darker purple - For active item background */
+    --sidebar-accent: 260 60% 40%; /* Slightly lighter purple for hover */
     --sidebar-accent-foreground: 0 0% 100%; /* White */
-    --sidebar-border: 190 37% 38%; /* Darker blue for borders within sidebar */
+    --sidebar-border: 260 60% 30%; /* Darker purple for borders within sidebar */
     --sidebar-ring: 0 0% 100%; /* White for focus ring inside sidebar */
   }
 
@@ -52,8 +52,8 @@ body {
     --card-foreground: 216 25% 96%;
     --popover: 220 9% 18%;
     --popover-foreground: 216 25% 96%;
-    --primary: 190 37% 55%; /* Lighter Calm Blue */
-    --primary-foreground: 0 0% 10%; /* Dark text on lighter blue */
+    --primary: 260 60% 45%; /* Lighter Deep Purple #7B3FE4 */
+    --primary-foreground: 0 0% 100%; /* White text on lighter purple */
     --secondary: 220 9% 25%;
     --secondary-foreground: 216 25% 96%;
     --muted: 220 9% 22%;
@@ -64,22 +64,22 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 220 9% 28%;
     --input: 220 9% 28%;
-    --ring: 190 37% 55%;
-    --chart-1: 190 37% 55%;
+    --ring: 260 60% 45%; /* Lighter Deep Purple */
+    --chart-1: 260 60% 45%; /* Lighter Deep Purple */
     --chart-2: 106 34% 55%;
     --chart-3: 210 30% 60%;
     --chart-4: 30 80% 70%;
     --chart-5: 270 50% 70%;
 
     /* Dark Sidebar specific theme variables */
-    --sidebar-background: 220 9% 12%; /* Even darker gray */
+    --sidebar-background: 260 60% 30%; /* Darker Deep Purple */
     --sidebar-foreground: 216 25% 96%; /* Light gray text */
-    --sidebar-primary: 190 37% 55%; /* Lighter blue from dark theme primary */
-    --sidebar-primary-foreground: 0 0% 10%; /* Dark text */
-    --sidebar-accent: 220 9% 20%; /* Slightly lighter dark gray for hover */
+    --sidebar-primary: 260 60% 45%; /* Lighter purple from dark theme primary */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text */
+    --sidebar-accent: 260 60% 35%; /* Slightly lighter dark purple for hover */
     --sidebar-accent-foreground: 216 25% 96%; /* Light gray text */
-    --sidebar-border: 220 9% 25%; /* Border for dark sidebar */
-    --sidebar-ring: 190 37% 55%; /* Ring for dark sidebar */
+    --sidebar-border: 260 60% 25%; /* Darker purple for borders within sidebar */
+    --sidebar-ring: 260 60% 45%; /* Lighter purple for ring in dark sidebar */
   }
 }
 
