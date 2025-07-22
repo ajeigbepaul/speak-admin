@@ -29,10 +29,10 @@ export default function DashboardLayout({
       setPageTitle('Dashboard');
     } else if (pathname.startsWith('/counsellors')) {
       setPageTitle('Counsellor Management');
-    } else if (pathname.startsWith('/users')) {
-      setPageTitle('User Management');
+    } else if (pathname.startsWith('/admins')) {
+      setPageTitle('Admin Management');
     } else if (pathname.startsWith('/invite')) {
-      setPageTitle('Invite User');
+      setPageTitle('Manage Invites');
     }
     // Add more else if blocks for other pages
   }, [pathname]);

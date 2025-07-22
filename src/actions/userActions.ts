@@ -71,7 +71,7 @@ export async function deleteAppUser(uid: string): Promise<ActionResult> {
     const userDocRef = doc(db, "users", uid);
     await deleteDoc(userDocRef);
 
-    revalidatePath("/users");
+    revalidatePath("/admins");
     // TODO: Implement Firebase Authentication user deletion.
     // This typically requires Firebase Admin SDK in a trusted backend environment (e.g., Cloud Function).
     // Example: admin.auth().deleteUser(uid);
