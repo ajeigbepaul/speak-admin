@@ -37,6 +37,7 @@ if (
     },
   });
 
+ 
   transporter.verify(function (error, success) {
     if (error) {
       console.error("Gmail service configuration error:", error);
