@@ -1,4 +1,3 @@
-
 export type UserRole = "superadmin" | "admin" | "user";
 
 // User type for AuthContext (simpler, focused on auth session)
@@ -18,6 +17,11 @@ export interface AppUser {
   name?: string; // Name might not always be present initially
   createdAt: any; // Firestore Timestamp or ISO string after conversion
   // Add any other fields you store per user
+  profilePic?: string;
+  photoURL?: string;
+  disabled?: boolean; // suspension flag
+  lastLoginAt?: any; // Firestore Timestamp | ISO string | Date
+  updatedAt?: any; // Firestore Timestamp | ISO string | Date
 }
 
 export type CounsellorStatus = "Pending" | "Verified" | "Rejected" | "Invited";
@@ -66,7 +70,12 @@ export interface ChatStatusData {
   fill?: string;
 }
 
-export type ChatSessionStatus = "Pending" | "Active" | "Resolved" | "ClosedByUser" | "ClosedByCounsellor";
+export type ChatSessionStatus =
+  | "Pending"
+  | "Active"
+  | "Resolved"
+  | "ClosedByUser"
+  | "ClosedByCounsellor";
 
 export interface ChatSession {
   id: string;
@@ -80,8 +89,11 @@ export interface ChatSession {
   counsellorUnreadMessages?: number;
 }
 
-
-export type NotificationType = "new_counsellor_invited" | "counsellor_pending_verification" | "chat_request" | "general";
+export type NotificationType =
+  | "new_counsellor_invited"
+  | "counsellor_pending_verification"
+  | "chat_request"
+  | "general";
 
 export interface AppNotification {
   id: string; // Firestore document ID
@@ -97,7 +109,7 @@ export interface AppNotification {
 // Mock chat types for ViewUserDialog
 export interface MockChatMessage {
   id: string;
-  sender: 'user' | 'support' | 'other';
+  sender: "user" | "support" | "other";
   text: string;
   timestamp: string; // ISO Date string
 }
@@ -114,7 +126,7 @@ export interface ActionResult {
 export interface InviteAdminOrUserInput {
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: "admin" | "user";
 }
 
 export interface InviteCounselorInput {
@@ -123,7 +135,7 @@ export interface InviteCounselorInput {
 }
 
 export interface SetInitialPasswordInput {
-    email: string;
-    temporaryPassword?: string;
-    newPassword: string;
+  email: string;
+  temporaryPassword?: string;
+  newPassword: string;
 }

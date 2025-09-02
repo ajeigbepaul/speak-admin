@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { ChartConfig } from "@/components/ui/chart"
 
 interface AnalyticsChartProps<TData = any> {
-  title: string;
+  title?: string;
   description?: string;
   data: TData[];
   chartType: "bar" | "line" | "pie";
