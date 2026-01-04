@@ -24,7 +24,7 @@ import type { AppNotification } from "@/lib/types";
 import { db } from "@/lib/firebase";
 import { collection, query, orderBy, limit, onSnapshot, Timestamp } from "firebase/firestore";
 import { markNotificationAsRead, markAllNotificationsAsRead } from "@/actions/notificationActions";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 
 export function AppHeader({ pageTitle }: { pageTitle: string }) {
   const { user, logout } = useAuth();
@@ -34,7 +34,6 @@ export function AppHeader({ pageTitle }: { pageTitle: string }) {
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
@@ -55,12 +54,12 @@ export function AppHeader({ pageTitle }: { pageTitle: string }) {
       setUnreadNotificationsCount(fetchedNotifications.filter(n => !n.read).length);
     }, (error) => {
       console.error("Error fetching notifications:", error);
-      toast({ title: "Error", description: "Could not fetch notifications.", variant: "destructive" });
+      toast.error("Could not fetch notifications.");
     });
 
     return () => unsubscribe();
   }, [toast]);
-  
+
   const handleNotificationClick = async (notification: AppNotification) => {
     startTransition(async () => {
       if (!notification.read) {
@@ -76,16 +75,16 @@ export function AppHeader({ pageTitle }: { pageTitle: string }) {
   const handleMarkAllRead = async () => {
     const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
     if (unreadIds.length === 0) {
-      toast({ title: "No unread notifications", description: "All notifications are already marked as read.", variant: "default" });
+      toast("All notifications are already marked as read.");
       return;
     }
     startTransition(async () => {
       const result = await markAllNotificationsAsRead(unreadIds);
       if (result.success) {
-        toast({ title: "Success", description: result.message, variant: "default" });
+        toast.success(result.message);
         // Optimistic update or rely on onSnapshot
       } else {
-        toast({ title: "Error", description: result.message, variant: "destructive" });
+        toast.error(result.message);
       }
     });
   };
@@ -116,13 +115,13 @@ export function AppHeader({ pageTitle }: { pageTitle: string }) {
       <h1 className="text-xl font-semibold">{pageTitle}</h1>
       <div className="ml-auto flex items-center gap-2 md:gap-4">
         <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            aria-label="Toggle theme"
-            disabled={!mounted}
-          >
-            {renderThemeToggleIcon()}
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+          aria-label="Toggle theme"
+          disabled={!mounted}
+        >
+          {renderThemeToggleIcon()}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -140,8 +139,8 @@ export function AppHeader({ pageTitle }: { pageTitle: string }) {
             <DropdownMenuLabel className="flex justify-between items-center">
               Notifications
               {notifications.filter(n => !n.read).length > 0 && (
-                 <Button variant="ghost" size="sm" onClick={handleMarkAllRead} disabled={isPending} className="text-xs h-auto p-1">
-                    <CheckCheck className="mr-1 h-3 w-3"/> Mark all read
+                <Button variant="ghost" size="sm" onClick={handleMarkAllRead} disabled={isPending} className="text-xs h-auto p-1">
+                  <CheckCheck className="mr-1 h-3 w-3" /> Mark all read
                 </Button>
               )}
             </DropdownMenuLabel>
@@ -151,8 +150,8 @@ export function AppHeader({ pageTitle }: { pageTitle: string }) {
             ) : (
               <DropdownMenuGroup>
                 {notifications.map(notif => (
-                  <DropdownMenuItem 
-                    key={notif.id} 
+                  <DropdownMenuItem
+                    key={notif.id}
                     onClick={() => handleNotificationClick(notif)}
                     className={`cursor-pointer p-2 hover:bg-muted ${!notif.read ? 'font-semibold bg-muted/30' : ''}`}
                     disabled={isPending}
@@ -166,14 +165,14 @@ export function AppHeader({ pageTitle }: { pageTitle: string }) {
                 ))}
               </DropdownMenuGroup>
             )}
-             {notifications.length > 5 && ( // Example: only show if many notifications
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                      <Link href="#" className="block p-2 text-center text-primary hover:underline">View all notifications</Link>
-                  </DropdownMenuItem>
-                </>
-             )}
+            {notifications.length > 5 && ( // Example: only show if many notifications
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="#" className="block p-2 text-center text-primary hover:underline">View all notifications</Link>
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 

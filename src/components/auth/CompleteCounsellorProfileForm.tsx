@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { db, storage, auth } from "@/lib/firebase";
 import { collection, query, where, getDocs, updateDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -14,7 +14,6 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 export function CompleteCounsellorProfileForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -45,7 +44,7 @@ export function CompleteCounsellorProfileForm() {
     try {
       const user = auth.currentUser;
       if (!user) {
-        toast({ title: "Error", description: "You must be signed in to complete your profile.", variant: "destructive" });
+        toast.error("You must be signed in to complete your profile.");
         setIsSubmitting(false);
         return;
       }
@@ -64,7 +63,7 @@ export function CompleteCounsellorProfileForm() {
           await uploadBytes(storageRef, profilePic);
           profilePicUrl = await getDownloadURL(storageRef);
         } catch (uploadErr) {
-          toast({ title: "Error", description: "Failed to upload profile picture.", variant: "destructive" });
+          toast.error("Failed to upload profile picture.");
           setIsSubmitting(false);
           return;
         }
@@ -93,10 +92,10 @@ export function CompleteCounsellorProfileForm() {
       if (!querySnapshot.empty && querySnapshot.docs[0].id !== user.uid) {
         await deleteDoc(doc(db, "counselors", querySnapshot.docs[0].id));
       }
-      toast({ title: "Profile Completed!", description: "Your profile has been submitted for review.", variant: "default" });
+      toast.success("Your profile has been submitted for review.");
       router.push("/profile-complete");
     } catch (err) {
-      toast({ title: "Error", description: "Failed to update profile. Please try again.", variant: "destructive" });
+      toast.error("Failed to update profile. Please try again.");
       setIsSubmitting(false);
     }
   };

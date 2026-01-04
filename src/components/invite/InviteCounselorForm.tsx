@@ -11,7 +11,7 @@
 // import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 // import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-// import { useToast } from "@/hooks/use-toast";
+// import { toast } from "react-hot-toast";
 // import { inviteAdminOrUserAction, inviteCounselorAction } from "@/actions/inviteActions";
 // import type { UserRole } from "@/lib/types";
 // import { Send, UserPlus, Briefcase } from "lucide-react";
@@ -132,7 +132,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { inviteCounselorAction } from "@/actions/inviteActions";
 import { Send } from "lucide-react";
 
@@ -145,7 +145,6 @@ type InviteCounselorFormValues = z.infer<typeof inviteCounselorSchema>;
 
 export function InviteCounselorForm() {
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
 
   const form = useForm<InviteCounselorFormValues>({
     resolver: zodResolver(inviteCounselorSchema),
@@ -160,10 +159,10 @@ export function InviteCounselorForm() {
       const result = await inviteCounselorAction({ email: data.email, name: data.name });
 
       if (result.success) {
-        toast({ title: "Success", description: result.message, variant: "default" });
+        toast.success(result.message);
         form.reset();
       } else {
-        toast({ title: "Error", description: result.message, variant: "destructive" });
+        toast.error(result.message);
       }
     });
   };

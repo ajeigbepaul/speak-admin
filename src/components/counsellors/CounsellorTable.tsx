@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { deleteDoc, doc } from "firebase/firestore";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { db } from "@/lib/firebase";
+import { ConfirmModal } from "../shared/ConfirmModal";
 
 interface CounsellorTableProps {
   initialCounsellors: Counsellor[];
@@ -39,8 +40,9 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
   const [selectedCounsellor, setSelectedCounsellor] = useState<Counsellor | null>(null);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
-  
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [counsellorIdToDelete, setCounsellorIdToDelete] = useState<string | null>(null);
+
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -78,19 +80,28 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
     setCounsellors(prev => prev.map(c => c.id === counsellorId ? { ...c, status: newStatus } : c));
   };
 
-  const handleDelete = async (counsellorId: string) => {
-    if (!window.confirm("Are you sure you want to delete this counsellor? This action cannot be undone.")) return;
+  const handleDelete = (counsellorId: string) => {
+    setCounsellorIdToDelete(counsellorId);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!counsellorIdToDelete) return;
+
+    setIsConfirmOpen(false);
     startTransition(async () => {
       try {
-        await deleteDoc(doc(db, "counselors", counsellorId));
-        setCounsellors(prev => prev.filter(c => c.id !== counsellorId));
-        toast({ title: "Deleted", description: "Counsellor deleted successfully.", variant: "default" });
+        await deleteDoc(doc(db, "counselors", counsellorIdToDelete));
+        setCounsellors(prev => prev.filter(c => c.id !== counsellorIdToDelete));
+        toast.success("Counsellor deleted successfully.");
       } catch (err) {
-        toast({ title: "Error", description: "Failed to delete counsellor.", variant: "destructive" });
+        toast.error("Failed to delete counsellor.");
+      } finally {
+        setCounsellorIdToDelete(null);
       }
     });
   };
-  
+
   const getStatusBadgeVariant = (status: Counsellor["status"]) => {
     switch (status) {
       case "Verified": return "default";
@@ -211,8 +222,8 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
                         <DropdownMenuItem onClick={() => handleOpenVerificationDialog(counsellor)}>
                           View Details / Verify
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleDelete(counsellor.id)} 
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(counsellor.id)}
                           className="text-destructive focus:text-destructive focus:bg-destructive/10"
                           disabled={isPending}
                         >
@@ -227,8 +238,8 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
                   <div className="text-muted-foreground">
-                    {searchTerm || filterStatus !== "All" 
-                      ? "No counsellors match your search criteria." 
+                    {searchTerm || filterStatus !== "All"
+                      ? "No counsellors match your search criteria."
                       : "No counsellors found in the system."
                     }
                   </div>
@@ -238,12 +249,22 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
           </TableBody>
         </Table>
       </div>
-      
+
       <VerificationDialog
         counsellor={selectedCounsellor}
         isOpen={isVerificationDialogOpen}
         onOpenChange={setIsVerificationDialogOpen}
         onStatusUpdate={handleStatusUpdate}
+      />
+
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Counsellor"
+        description="Are you sure you want to delete this counsellor? This action cannot be undone."
+        variant="destructive"
+        confirmText="Delete"
       />
     </div>
   );

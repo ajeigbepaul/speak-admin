@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Counsellor } from "@/lib/types";
 import { updateCounsellorStatus } from "@/actions/counsellorActions";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Phone } from "lucide-react";
 
@@ -30,9 +30,8 @@ interface VerificationDialogProps {
 
 export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusUpdate }: VerificationDialogProps) {
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
-   console.log(counsellor,"Verify-Counsellor")
-   console.log(counsellor?.id,"Counsellor")
+  console.log(counsellor, "Verify-Counsellor")
+  console.log(counsellor?.id, "Counsellor")
   if (!counsellor) return null;
 
   const handleVerify = () => {
@@ -40,11 +39,11 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
     startTransition(async () => {
       const result = await updateCounsellorStatus(counsellor.id, "Verified");
       if (result.success) {
-        toast({ title: "Success", description: result.message, variant: "default" });
+        toast.success(result.message);
         onStatusUpdate(counsellor.id, "Verified");
         onOpenChange(false);
       } else {
-        toast({ title: "Error", description: result.message, variant: "destructive" });
+        toast.error(result.message);
       }
     });
   };
@@ -53,11 +52,11 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
     startTransition(async () => {
       const result = await updateCounsellorStatus(counsellor.id, "Rejected");
       if (result.success) {
-        toast({ title: "Success", description: result.message, variant: "default" });
+        toast.success(result.message);
         onStatusUpdate(counsellor.id, "Rejected");
         onOpenChange(false);
       } else {
-        toast({ title: "Error", description: result.message, variant: "destructive" });
+        toast.error(result.message);
       }
     });
   };
@@ -80,11 +79,11 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
           <DialogTitle>Counsellor Verification</DialogTitle>
           <DialogDescription>Review the counsellor's details before changing status.</DialogDescription>
         </DialogHeader>
-        
+
         <div className="flex-grow overflow-y-auto pr-2 space-y-6 py-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={counsellor.profilePic} alt={counsellor.fullName} data-ai-hint="person avatar"/>
+              <AvatarImage src={counsellor.profilePic} alt={counsellor.fullName} data-ai-hint="person avatar" />
               <AvatarFallback>{counsellor.fullName?.charAt(0) || 'C'}</AvatarFallback>
             </Avatar>
             <div>
@@ -122,9 +121,9 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
 
           {/* Reject Button: Show if status is Pending or Verified */}
           {(counsellor.status === "Pending" || counsellor.status === "Verified") && (
-            <Button 
-              variant="destructive" 
-              onClick={handleReject} 
+            <Button
+              variant="destructive"
+              onClick={handleReject}
               disabled={isPending}
               className="bg-red-600 hover:bg-red-700"
             >
@@ -135,8 +134,8 @@ export function VerificationDialog({ counsellor, isOpen, onOpenChange, onStatusU
 
           {/* Verify Button: Show if status is Pending or Rejected */}
           {(counsellor.status === "Pending" || counsellor.status === "Rejected") && (
-            <Button 
-              onClick={handleVerify} 
+            <Button
+              onClick={handleVerify}
               disabled={isPending}
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
             >

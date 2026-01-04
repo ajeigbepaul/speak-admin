@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, KeyRound, Eye, EyeOff, UserPlus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
@@ -28,7 +28,6 @@ function SubmitButton({ pending }: SubmitButtonProps) {
 export function SetInitialPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   const [tempPass, setTempPass] = useState(""); // For display or potential verification if enhanced later
@@ -51,13 +50,13 @@ export function SetInitialPasswordForm() {
       setEmail(decodeURIComponent(emailFromQuery));
     } else {
       setError("Email not found in invitation link. Please use the link provided in your email.");
-      toast({title: "Invalid Link", description: "Email parameter missing from invitation link.", variant: "destructive"});
+      toast.error("Email parameter missing from invitation link.");
     }
     if (tempPassFromQuery) {
       setTempPass(decodeURIComponent(tempPassFromQuery));
     }
     if (typeFromQuery) {
-        setInviteType(typeFromQuery);
+      setInviteType(typeFromQuery);
     }
     setLoadingParams(false);
   }, [searchParams, toast]);
@@ -75,8 +74,8 @@ export function SetInitialPasswordForm() {
       return;
     }
     if (newPassword.length < 6) {
-        setError("Password should be at least 6 characters.");
-        return;
+      setError("Password should be at least 6 characters.");
+      return;
     }
 
     setIsLoading(true);
@@ -85,12 +84,8 @@ export function SetInitialPasswordForm() {
       // The temporary password sent in the email is not directly used for Firebase Auth user creation here
       // Its presence in the link acts as a form of token.
       await createUserWithEmailAndPassword(auth, email, newPassword);
-      
-      toast({
-        title: "Password Set Successfully!",
-        description: "Your account has been created. You can now log in.",
-        variant: "default",
-      });
+
+      toast.success("Your account has been created. You can now log in.");
 
       // TODO: Redirect to profile completion for counselors, or login for admins/admins
       if (inviteType === 'counselor') {
@@ -122,7 +117,7 @@ export function SetInitialPasswordForm() {
       setIsLoading(false);
     }
   };
-  
+
   if (loadingParams) {
     return (
       <Card className="w-full max-w-md shadow-xl">
@@ -138,21 +133,21 @@ export function SetInitialPasswordForm() {
 
   if (!email && !isLoading && !loadingParams) { // Show error early if email is missing and not just loading params
     return (
-         <Card className="w-full max-w-md shadow-xl">
-            <CardHeader>
-                <CardTitle>Invalid Invitation Link</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Alert variant="destructive">
-                    <Terminal className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error || "This invitation link is invalid or has missing information. Please use the link provided in your email."}</AlertDescription>
-                </Alert>
-                 <Button onClick={() => router.push('/login')} className="w-full mt-4">
-                    Go to Login
-                </Button>
-            </CardContent>
-        </Card>
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader>
+          <CardTitle>Invalid Invitation Link</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error || "This invitation link is invalid or has missing information. Please use the link provided in your email."}</AlertDescription>
+          </Alert>
+          <Button onClick={() => router.push('/login')} className="w-full mt-4">
+            Go to Login
+          </Button>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -236,8 +231,8 @@ export function SetInitialPasswordForm() {
           )}
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <SubmitButton pending={isLoading || !email} /> 
-           <Button variant="link" size="sm" onClick={() => router.push('/login')} className="w-full">
+          <SubmitButton pending={isLoading || !email} />
+          <Button variant="link" size="sm" onClick={() => router.push('/login')} className="w-full">
             Back to Login
           </Button>
         </CardFooter>

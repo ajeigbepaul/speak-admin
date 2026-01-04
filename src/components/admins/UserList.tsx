@@ -16,18 +16,9 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmModal } from "../shared/ConfirmModal";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { deleteAppUser } from "@/actions/userActions";
 import { ViewUserDialog } from "./ViewUserDialog";
 import Link from "next/link";
@@ -53,7 +44,6 @@ export function UserList({ initialUsers }: UserListProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { user: currentUser } = useAuth();
-  const { toast } = useToast();
 
   const superAdminEmail = process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
 
@@ -69,7 +59,7 @@ export function UserList({ initialUsers }: UserListProps) {
   // Filter users based on search and role
   const filteredUsers = useMemo(() => {
     return otherUsers.filter((user) => {
-      const matchesSearch = 
+      const matchesSearch =
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = roleFilter === "all" || user.role === roleFilter;
@@ -93,12 +83,12 @@ export function UserList({ initialUsers }: UserListProps) {
 
   const handleDeleteUser = (user: AppUser) => {
     if (currentUser?.email === user.email) {
-        toast({ title: "Action Restricted", description: "You cannot delete your own account.", variant: "destructive"});
-        return;
+      toast.error("You cannot delete your own account.");
+      return;
     }
     if (user.role === 'superadmin' && user.email === superAdminEmail) {
-        toast({ title: "Action Restricted", description: "Superadmin account cannot be deleted from here.", variant: "destructive"});
-        return;
+      toast.error("Superadmin account cannot be deleted from here.");
+      return;
     }
     setUserToDelete(user);
     setIsDeleteConfirmOpen(true);
@@ -109,10 +99,10 @@ export function UserList({ initialUsers }: UserListProps) {
     startTransition(async () => {
       const result = await deleteAppUser(userToDelete.uid);
       if (result.success) {
-        toast({ title: "Success", description: result.message, variant: "default" });
+        toast.success(result.message);
         setUsers(prevUsers => prevUsers.filter(u => u.uid !== userToDelete.uid));
       } else {
-        toast({ title: "Error", description: result.message, variant: "destructive" });
+        toast.error(result.message);
       }
       setUserToDelete(null);
       setIsDeleteConfirmOpen(false);
@@ -130,7 +120,7 @@ export function UserList({ initialUsers }: UserListProps) {
     }
     return 'Invalid Date';
   };
-  
+
   if (users.length === 0) {
     return (
       <div className="text-center py-12">
@@ -190,13 +180,13 @@ export function UserList({ initialUsers }: UserListProps) {
                 <ShieldCheck className="ml-2 h-6 w-6 text-primary" />
               </CardTitle>
               <CardDescription>{superAdminUser.email} - Super Administrator</CardDescription>
-               <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Joined: {formatUserCreationDate(superAdminUser.createdAt)}
               </p>
             </div>
           </CardHeader>
           <CardContent>
-             <p className="text-sm text-muted-foreground">This is the primary administrative account with full system privileges.</p>
+            <p className="text-sm text-muted-foreground">This is the primary administrative account with full system privileges.</p>
           </CardContent>
         </Card>
       )}
@@ -211,7 +201,7 @@ export function UserList({ initialUsers }: UserListProps) {
             >
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={undefined} alt={user.name || user.email} data-ai-hint="person avatar"/>
+                  <AvatarImage src={undefined} alt={user.name || user.email} data-ai-hint="person avatar" />
                   <AvatarFallback>
                     {user.name ? user.name.charAt(0).toUpperCase() : (user.email || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
@@ -239,11 +229,11 @@ export function UserList({ initialUsers }: UserListProps) {
                     <DropdownMenuItem onClick={() => handleViewUser(user)}>
                       <Eye className="mr-2 h-4 w-4" /> View Details
                     </DropdownMenuItem>
-                    { !(user.role === 'superadmin' && user.email === superAdminEmail) && (
+                    {!(user.role === 'superadmin' && user.email === superAdminEmail) && (
                       <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => handleDeleteUser(user)} 
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteUser(user)}
                           className="text-destructive focus:text-destructive focus:bg-destructive/10"
                           disabled={isPending}
                         >
@@ -260,38 +250,29 @@ export function UserList({ initialUsers }: UserListProps) {
       ) : (
         <div className="text-center py-8">
           <p className="text-muted-foreground">
-            {searchTerm || roleFilter !== "all" 
-              ? "No users match your search criteria." 
+            {searchTerm || roleFilter !== "all"
+              ? "No users match your search criteria."
               : "No other users found in the system."
             }
           </p>
         </div>
       )}
-      
+
       <ViewUserDialog
         user={selectedUserForView}
         isOpen={isViewUserDialogOpen}
         onOpenChange={setIsViewUserDialogOpen}
       />
 
-      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently remove the user's data
-              ({userToDelete?.name || userToDelete?.email}) from the application list.
-              The user's Firebase Authentication account will not be deleted by this action.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
-              {isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete User"
+        description={`This action cannot be undone. This will permanently remove the user's data (${userToDelete?.name || userToDelete?.email}) from the application list. The user's Firebase Authentication account will not be deleted by this action.`}
+        variant="destructive"
+        confirmText={isPending ? "Deleting..." : "Delete"}
+      />
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, UserPlus, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { setSuperAdminRole } from '@/actions/userActions';
@@ -29,7 +29,6 @@ function SubmitButton({ pending }: SubmitButtonProps) {
 
 export function SignupForm() {
   const router = useRouter();
-  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -42,7 +41,7 @@ export function SignupForm() {
 
   if (!superAdminEmail) {
     return (
-       <Card className="w-full max-w-md shadow-xl">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader>
           <CardTitle>Configuration Error</CardTitle>
         </CardHeader>
@@ -69,11 +68,7 @@ export function SignupForm() {
     }
 
     if (email.toLowerCase() !== superAdminEmail.toLowerCase()) {
-      toast({
-        title: "Signup Restricted",
-        description: "This signup form is for the initial superadmin only. Please contact the admin for an invite.",
-        variant: "destructive",
-      });
+      toast.error("This signup form is for the initial superadmin only. Please contact the admin for an invite.");
       return;
     }
 
@@ -86,21 +81,13 @@ export function SignupForm() {
         // Call server action to set role in Firestore
         const roleResult = await setSuperAdminRole(firebaseUser.uid, firebaseUser.email || email);
         if (roleResult.success) {
-          toast({
-            title: "Signup Successful",
-            description: "Superadmin account created and configured.",
-            variant: "default",
-          });
+          toast.success("Superadmin account created and configured.");
           router.push('/'); // Redirect directly to dashboard
         } else {
           // Role setting failed. This is a critical issue.
           // Ideally, you might want to delete the Firebase Auth user here or provide manual cleanup instructions.
           setError(roleResult.message || "Failed to set superadmin role in database. Please contact support.");
-          toast({
-            title: "Configuration Error",
-            description: roleResult.message || "Failed to set superadmin role. Please contact support.",
-            variant: "destructive",
-          });
+          toast.error(roleResult.message || "Failed to set superadmin role. Please contact support.");
           // Consider signing out the partially created user: await auth.signOut();
         }
       }
@@ -209,7 +196,7 @@ export function SignupForm() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <SubmitButton pending={isLoading} />
-           <Button variant="link" size="sm" onClick={() => router.push('/login')} className="w-full">
+          <Button variant="link" size="sm" onClick={() => router.push('/login')} className="w-full">
             Already have an account? Sign In
           </Button>
         </CardFooter>

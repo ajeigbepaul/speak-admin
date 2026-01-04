@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, LogIn, Eye, EyeOff, UserPlus } from "lucide-react"; // Added UserPlus
 import { mockAdminUser } from '@/lib/mockData'; 
+import toast from 'react-hot-toast';
 
 interface SubmitButtonProps {
   pending: boolean;
@@ -49,11 +50,10 @@ export function LoginForm() {
       // Successful login will trigger useEffect above to redirect
     } catch (err: any) {
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-email') {
-        setError("Invalid email or password.");
+        toast("Invalid email or password.");
       } else {
-        setError("An unexpected error occurred. Please try again.");
+        toast("An unexpected error occurred. Please try again.");
       }
-      console.error("Login failed:", err);
     } finally {
       setIsSubmitting(false);
     }

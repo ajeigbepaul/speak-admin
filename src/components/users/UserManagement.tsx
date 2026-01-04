@@ -82,7 +82,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 
@@ -97,7 +97,6 @@ interface ExtendedUser extends AppUser {
 }
 
 export function UserManagement() {
-  const { toast } = useToast();
   const { user: currentUser } = useAuth();
   const canEditRoles = currentUser?.role === "superadmin";
   const canDeleteOrSuspend = currentUser?.role === "superadmin";
@@ -196,11 +195,7 @@ export function UserManagement() {
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching users:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load users. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to load users. Please try again.");
       setIsLoading(false);
     }
   };
@@ -285,19 +280,12 @@ export function UserManagement() {
         )
       );
 
-      toast({
-        title: "Success",
-        description: "User updated successfully",
-      });
+      toast.success("User updated successfully");
 
       setIsEditDialogOpen(false);
     } catch (error) {
       console.error("Error updating user:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update user. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to update user. Please try again.");
     }
   };
 
@@ -318,19 +306,12 @@ export function UserManagement() {
         )
       );
 
-      toast({
-        title: "Success",
-        description: "User suspended successfully",
-      });
+      toast.success("User suspended successfully");
 
       setIsSuspendDialogOpen(false);
     } catch (error) {
       console.error("Error suspending user:", error);
-      toast({
-        title: "Error",
-        description: "Failed to suspend user. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to suspend user. Please try again.");
     }
   };
 
@@ -347,17 +328,10 @@ export function UserManagement() {
         prev.map((u) => (u.id === user.id ? { ...u, disabled: false } : u))
       );
 
-      toast({
-        title: "Success",
-        description: "User unsuspended successfully",
-      });
+      toast.success("User unsuspended successfully");
     } catch (error) {
       console.error("Error unsuspending user:", error);
-      toast({
-        title: "Error",
-        description: "Failed to unsuspend user. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to unsuspend user. Please try again.");
     }
   };
 
@@ -371,19 +345,12 @@ export function UserManagement() {
       // Update local state
       setUsers((prev) => prev.filter((user) => user.id !== selectedUser.id));
 
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
-      });
+      toast.success("User deleted successfully");
 
       setIsDeleteDialogOpen(false);
     } catch (error) {
       console.error("Error deleting user:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete user. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete user. Please try again.");
     }
   };
 
@@ -516,8 +483,8 @@ export function UserManagement() {
                           user.role === "superadmin"
                             ? "destructive"
                             : user.role === "admin"
-                            ? "default"
-                            : "secondary"
+                              ? "default"
+                              : "secondary"
                         }
                       >
                         {user.role}
@@ -650,8 +617,8 @@ export function UserManagement() {
                       selectedUser.role === "superadmin"
                         ? "destructive"
                         : selectedUser.role === "admin"
-                        ? "default"
-                        : "secondary"
+                          ? "default"
+                          : "secondary"
                     }
                   >
                     {selectedUser.role}

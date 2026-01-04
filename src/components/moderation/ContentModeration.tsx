@@ -55,8 +55,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// import { toast } from '@/components/ui/use-toast';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import {
   CheckCircle,
@@ -85,7 +84,6 @@ interface ContentItem {
 }
 
 export function ContentModeration() {
-  const { toast } = useToast();
   const [content, setContent] = useState<ContentItem[]>([]);
   const [filteredContent, setFilteredContent] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -221,11 +219,7 @@ export function ContentModeration() {
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching content:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load content. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to load content. Please try again.");
       setIsLoading(false);
     }
   };
@@ -287,20 +281,13 @@ export function ContentModeration() {
         )
       );
 
-      toast({
-        title: "Success",
-        description: "Content approved successfully",
-      });
+      toast.success("Content approved successfully");
 
       setIsViewDialogOpen(false);
       setModerationNote("");
     } catch (error) {
       console.error("Error approving content:", error);
-      toast({
-        title: "Error",
-        description: "Failed to approve content. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to approve content. Please try again.");
     }
   };
 
@@ -329,20 +316,13 @@ export function ContentModeration() {
         )
       );
 
-      toast({
-        title: "Success",
-        description: "Content rejected successfully",
-      });
+      toast.success("Content rejected successfully");
 
       setIsViewDialogOpen(false);
       setModerationNote("");
     } catch (error) {
       console.error("Error rejecting content:", error);
-      toast({
-        title: "Error",
-        description: "Failed to reject content. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to reject content. Please try again.");
     }
   };
 
@@ -362,20 +342,13 @@ export function ContentModeration() {
         prev.filter((item) => item.id !== selectedContent.id)
       );
 
-      toast({
-        title: "Success",
-        description: "Content deleted successfully",
-      });
+      toast.success("Content deleted successfully");
 
       setIsDeleteDialogOpen(false);
       setIsViewDialogOpen(false);
     } catch (error) {
       console.error("Error deleting content:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete content. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete content. Please try again.");
     }
   };
 
@@ -509,10 +482,10 @@ export function ContentModeration() {
                           item.status === "flagged"
                             ? "destructive"
                             : item.status === "approved"
-                            ? "secondary"
-                            : item.status === "rejected"
-                            ? "outline"
-                            : "default"
+                              ? "secondary"
+                              : item.status === "rejected"
+                                ? "outline"
+                                : "default"
                         }
                       >
                         {item.status.charAt(0).toUpperCase() +

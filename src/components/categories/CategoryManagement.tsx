@@ -17,7 +17,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 
 export interface AdminCategory {
   id?: string;
@@ -39,7 +39,6 @@ const emptyForm: AdminCategory = {
 };
 
 export function CategoryManagement() {
-  const { toast } = useToast();
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [form, setForm] = useState<AdminCategory>({ ...emptyForm });
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +50,7 @@ export function CategoryManagement() {
       setCategories(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
     } catch (e) {
       console.error("Load categories failed", e);
-      toast({ title: "Error", description: "Failed to load categories", variant: "destructive" });
+      toast.error("Failed to load categories");
     } finally {
       setIsLoading(false);
     }
@@ -64,26 +63,26 @@ export function CategoryManagement() {
   const createCategory = async () => {
     try {
       if (!form.name.trim()) {
-        toast({ title: "Name required", description: "Please enter a category name" });
+        toast.error("Please enter a category name");
         return;
       }
       await addDoc(collection(db, "categories"), form);
       setForm({ ...emptyForm });
       await load();
-      toast({ title: "Created", description: "Category created" });
+      toast.success("Category created");
     } catch (e) {
       console.error(e);
-      toast({ title: "Error", description: "Failed to create category", variant: "destructive" });
+      toast.error("Failed to create category");
     }
   };
 
   const saveCategory = async (c: AdminCategory) => {
     try {
       await updateDoc(doc(db, "categories", c.id!), c as any);
-      toast({ title: "Saved", description: `Saved ${c.name}` });
+      toast.success(`Saved ${c.name}`);
     } catch (e) {
       console.error(e);
-      toast({ title: "Error", description: "Failed to save category", variant: "destructive" });
+      toast.error("Failed to save category");
     }
   };
 
@@ -91,10 +90,10 @@ export function CategoryManagement() {
     try {
       await deleteDoc(doc(db, "categories", id));
       setCategories((prev) => prev.filter((x) => x.id !== id));
-      toast({ title: "Deleted", description: "Category removed" });
+      toast.success("Category removed");
     } catch (e) {
       console.error(e);
-      toast({ title: "Error", description: "Failed to delete category", variant: "destructive" });
+      toast.error("Failed to delete category");
     }
   };
 

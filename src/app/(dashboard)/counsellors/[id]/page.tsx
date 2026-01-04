@@ -18,8 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { VerificationDialog } from "@/components/counsellors/VerificationDialog";
-// import { toast } from '@/components/ui/use-toast';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
@@ -67,7 +66,6 @@ export default function CounselorDetailPage({
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] =
     useState(false);
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchCounselorDetails();
@@ -107,20 +105,12 @@ export default function CounselorDetailPage({
           status: data.status || "Pending",
         });
       } else {
-        toast({
-          title: "Error",
-          description: "Counselor not found",
-          variant: "destructive",
-        });
+        toast.error("Counselor not found");
         router.push("/counsellors");
       }
     } catch (error) {
       console.error("Error fetching counselor details:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load counselor details",
-        variant: "destructive",
-      });
+      toast.error("Failed to load counselor details");
     } finally {
       setIsLoading(false);
     }
@@ -174,8 +164,8 @@ export default function CounselorDetailPage({
                           counselor.status === "Verified"
                             ? "secondary"
                             : counselor.status === "Rejected"
-                            ? "destructive"
-                            : "secondary"
+                              ? "destructive"
+                              : "secondary"
                         }
                       >
                         {counselor.status}
@@ -344,10 +334,10 @@ export default function CounselorDetailPage({
               setCounselor((prev) =>
                 prev
                   ? {
-                      ...prev,
-                      status: newStatus,
-                      isVerified: newStatus === "Verified",
-                    }
+                    ...prev,
+                    status: newStatus,
+                    isVerified: newStatus === "Verified",
+                  }
                   : prev
               );
               fetchCounselorDetails();
