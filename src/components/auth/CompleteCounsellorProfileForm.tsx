@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-hot-toast";
-import { db, storage, auth } from "@/lib/firebase";
-import { collection, query, where, getDocs, updateDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, auth } from "@/lib/firebase";
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 
 export function CompleteCounsellorProfileForm() {
   const router = useRouter();
@@ -20,19 +19,34 @@ export function CompleteCounsellorProfileForm() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState({ street: "", city: "", state: "", country: "" });
   const [occupation, setOccupation] = useState("");
-  const [profilePic, setProfilePic] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const emailFromQuery = searchParams.get("email");
-    if (emailFromQuery) setEmail(decodeURIComponent(emailFromQuery));
-  }, [searchParams]);
+    const init = async () => {
+      const emailFromQuery = searchParams.get("email");
+      if (emailFromQuery) {
+        const emailDecoded = decodeURIComponent(emailFromQuery);
+        setEmail(emailDecoded);
 
-  const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setProfilePic(e.target.files[0]);
-    }
-  };
+        try {
+          const counselorsRef = collection(db, "counselors");
+          const q = query(counselorsRef, where("personalInfo.email", "==", emailDecoded));
+          const querySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty) {
+            const data = querySnapshot.docs[0].data();
+            if (data.personalInfo?.fullName) {
+              setFullName(data.personalInfo.fullName);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching invite details:", error);
+        }
+      }
+    };
+
+    init();
+  }, [searchParams]);
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAddress({ ...address, [e.target.name]: e.target.value });
@@ -56,18 +70,7 @@ export function CompleteCounsellorProfileForm() {
       if (!querySnapshot.empty) {
         invitedDocData = querySnapshot.docs[0].data();
       }
-      let profilePicUrl = "";
-      if (profilePic) {
-        try {
-          const storageRef = ref(storage, `counsellors/${user.uid}/profilePic`);
-          await uploadBytes(storageRef, profilePic);
-          profilePicUrl = await getDownloadURL(storageRef);
-        } catch (uploadErr) {
-          toast.error("Failed to upload profile picture.");
-          setIsSubmitting(false);
-          return;
-        }
-      }
+
       // Create or update the doc with UID as ID
       const docRef = doc(db, "counselors", user.uid);
       await setDoc(docRef, {
@@ -77,7 +80,6 @@ export function CompleteCounsellorProfileForm() {
           fullName,
           email,
           phoneNumber,
-          profilePic: profilePicUrl || invitedDocData?.personalInfo?.profilePic || undefined,
           address,
         },
         professionalInfo: {
@@ -128,13 +130,9 @@ export function CompleteCounsellorProfileForm() {
             <Label htmlFor="occupation">Occupation</Label>
             <Input id="occupation" value={occupation} onChange={e => setOccupation(e.target.value)} required />
           </div>
-          <div>
-            <Label htmlFor="profilePic">Profile Picture</Label>
-            <Input id="profilePic" type="file" accept="image/*" onChange={handleProfilePicChange} />
-          </div>
           <Button type="submit" className="w-full" disabled={isSubmitting}>{isSubmitting ? "Submitting..." : "Submit Profile"}</Button>
         </form>
       </CardContent>
     </Card>
   );
-} 
+}

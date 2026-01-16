@@ -12,7 +12,8 @@ function generateTemporaryPassword(length = 12) {
   return crypto.randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
 }
 
-const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_BASE_URL || "http://localhost:9002";
+const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_BASE_URL ||
+  (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "http://localhost:9002");
 
 export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Promise<ActionResult> {
   const { email, name, role } = data;
@@ -29,7 +30,7 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
     if (!querySnapshot.empty) {
       return { success: false, message: `A user with email ${email} already exists.` };
     }
-    
+
     const newUserDocRef = doc(collection(db, "users"));
     await setDoc(newUserDocRef, {
       uid: newUserDocRef.id,
@@ -41,7 +42,7 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
 
     const temporaryPassword = generateTemporaryPassword();
     const setPasswordLink = `${APP_BASE_URL}/set-initial-password?email=${encodeURIComponent(email)}&tempPass=${encodeURIComponent(temporaryPassword)}`;
-    
+
     const mailResult = await sendMail({
       to: email,
       subject: "You're invited to Speak Admin",
@@ -50,18 +51,18 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
     });
 
     if (!mailResult.success) {
-        console.error("Failed to send invitation email, but user record created:", mailResult.message);
-         return { 
-            success: true,
-            message: `${role.charAt(0).toUpperCase() + role.slice(1)} '${name}' invited. Firestore record created, but an error occurred sending the invitation email: ${mailResult.message}. Please provide them this link to set password: ${setPasswordLink} (Temp Pass: ${temporaryPassword})` 
-        };
+      console.error("Failed to send invitation email, but user record created:", mailResult.message);
+      return {
+        success: true,
+        message: `${role.charAt(0).toUpperCase() + role.slice(1)} '${name}' invited. Firestore record created, but an error occurred sending the invitation email: ${mailResult.message}. Please provide them this link to set password: ${setPasswordLink} (Temp Pass: ${temporaryPassword})`
+      };
     }
-    
+
     revalidatePath("/admins");
     revalidatePath("/invite");
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: `${role.charAt(0).toUpperCase() + role.slice(1)} '${name}' invited successfully. An email has been sent to ${email} with instructions to set their password.`
     };
 
@@ -69,7 +70,7 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
     console.error("Error inviting admin/user:", error);
     let errorMessage = "Failed to invite admin/user due to a database error.";
     if (error instanceof Error) {
-        errorMessage = `Failed to invite admin/user: ${error.message}`;
+      errorMessage = `Failed to invite admin/user: ${error.message}`;
     }
     return { success: false, message: errorMessage, error: String(error) };
   }
@@ -125,27 +126,27 @@ export async function inviteCounselorAction(data: InviteCounselorInput): Promise
     });
 
     if (!mailResult.success) {
-        console.error("Failed to send invitation email, but counselor record created:", mailResult.message);
-        return { 
-            success: true,
-            message: `Counselor '${name}' invited. Firestore record created, but an error occurred sending the invitation email: ${mailResult.message}. Please provide them this link to set password: ${setPasswordLink} (Temp Pass: ${temporaryPassword})` 
-        };
+      console.error("Failed to send invitation email, but counselor record created:", mailResult.message);
+      return {
+        success: true,
+        message: `Counselor '${name}' invited. Firestore record created, but an error occurred sending the invitation email: ${mailResult.message}. Please provide them this link to set password: ${setPasswordLink} (Temp Pass: ${temporaryPassword})`
+      };
     }
 
     revalidatePath("/counsellors");
     revalidatePath("/invite");
     // No path revalidation for /notifications as AppHeader uses onSnapshot
 
-    return { 
-      success: true, 
-      message: `Counselor '${name}' invited successfully. An email has been sent to ${email} with instructions to set their password and complete their profile. A notification has been created.` 
+    return {
+      success: true,
+      message: `Counselor '${name}' invited successfully. An email has been sent to ${email} with instructions to set their password and complete their profile. A notification has been created.`
     };
 
   } catch (error) {
     console.error("Error inviting counselor:", error);
     let errorMessage = "Failed to invite counselor due to a database error.";
-     if (error instanceof Error) {
-        errorMessage = `Failed to invite counselor: ${error.message}`;
+    if (error instanceof Error) {
+      errorMessage = `Failed to invite counselor: ${error.message}`;
     }
     return { success: false, message: errorMessage, error: String(error) };
   }
