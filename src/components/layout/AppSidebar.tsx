@@ -45,6 +45,7 @@ const navItems = [
     badgeKey: "pendingCounsellorsActual",
   },
   { href: "/admins", label: "Admins", icon: UserCog },
+  /*
   {
     href: "/super-admin",
     label: "Super Admin",
@@ -59,6 +60,7 @@ const navItems = [
     badgeKey: "flaggedContent",
   },
   { href: "/settings", label: "Settings", icon: Settings, role: "superadmin" },
+  */
   {
     href: "/categories",
     label: "Categories",
@@ -138,7 +140,7 @@ export function AppSidebar() {
     // Use the new state for the actual count
     pendingCounsellorsActual:
       pendingCounsellorsActualCount !== undefined &&
-      pendingCounsellorsActualCount > 0
+        pendingCounsellorsActualCount > 0
         ? pendingCounsellorsActualCount.toString()
         : undefined,
     flaggedContent:
