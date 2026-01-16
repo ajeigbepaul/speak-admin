@@ -8,6 +8,8 @@ import { UserCheck, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { CounsellorStatsCards } from "@/components/dashboard/CounsellorStatsCards";
 
+export const dynamic = 'force-dynamic';
+
 async function getCounsellors(): Promise<Counsellor[]> {
   try {
     const counsellorsCol = collection(db, 'counselors');
@@ -15,18 +17,18 @@ async function getCounsellors(): Promise<Counsellor[]> {
     const counsellorSnapshot = await getDocs(q);
     const counsellorsList = counsellorSnapshot.docs.map(doc => {
       const data = doc.data();
-      
+
       let status: Counsellor['status'] = 'Pending';
-      if (data.status && ["Pending", "Verified", "Rejected", "Invited"].includes(data.status)) { 
+      if (data.status && ["Pending", "Verified", "Rejected", "Invited"].includes(data.status)) {
         status = data.status as Counsellor['status'];
-      } else if (typeof data.isVerified === 'boolean') { 
+      } else if (typeof data.isVerified === 'boolean') {
         status = data.isVerified ? 'Verified' : 'Pending';
       }
-      
+
       let createdAtString = new Date().toISOString();
       if (data.createdAt && data.createdAt instanceof Timestamp) {
         createdAtString = data.createdAt.toDate().toISOString();
-      } else if (typeof data.createdAt === 'string') { 
+      } else if (typeof data.createdAt === 'string') {
         try {
           createdAtString = new Date(data.createdAt).toISOString();
         } catch (e) {
@@ -48,7 +50,7 @@ async function getCounsellors(): Promise<Counsellor[]> {
     return counsellorsList;
   } catch (error) {
     console.error("Error fetching counsellors:", error);
-    return []; 
+    return [];
   }
 }
 

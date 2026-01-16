@@ -6,10 +6,12 @@ import type { Counsellor, ChatStatusData, ChatSession, AppUser } from '@/lib/typ
 import { Users, UserCheck, MessageSquare, ListChecks } from "lucide-react";
 import type { ChartConfig } from "@/components/ui/chart";
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy, Timestamp, where,getCountFromServer } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, Timestamp, where, getCountFromServer } from 'firebase/firestore';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Welcome from "@/components/dashboard/Welcome";
+
+export const dynamic = 'force-dynamic';
 
 const monthlyChartConfig = {
   users: { label: "Users", color: "hsl(var(--chart-1))" },
@@ -31,19 +33,19 @@ async function getCounsellorsForDashboard(): Promise<Counsellor[]> {
     const counsellorSnapshot = await getDocs(q);
     const counsellorsList = counsellorSnapshot.docs.map(doc => {
       const data = doc.data();
-      
+
       let status: Counsellor['status'] = 'Pending';
       if (data.status && ["Pending", "Verified", "Rejected"].includes(data.status)) {
         status = data.status as Counsellor['status'];
       } else { // Fallback to isVerified if status field is missing or invalid
         status = data.isVerified ? 'Verified' : 'Pending';
       }
-      
+
       let createdAtString = new Date().toISOString();
       if (data.createdAt && data.createdAt instanceof Timestamp) {
         createdAtString = data.createdAt.toDate().toISOString();
       } else if (typeof data.createdAt === 'string') {
-         try {
+        try {
           createdAtString = new Date(data.createdAt).toISOString();
         } catch (e) {
           // keep fallback
@@ -94,7 +96,7 @@ async function getChatStats(): Promise<ChatStats> {
   const stats: ChatStats = { pending: 0, active: 0, resolved: 0 };
   try {
     const chatsCol = collection(db, 'posts'); // Assuming collection name is 'chats'
-    
+
     const pendingQuery = query(chatsCol, where("status", "==", "pending"));
     const activeQuery = query(chatsCol, where("status", "==", "active"));
     const resolvedQuery = query(chatsCol, where("status", "==", "resolved"));
@@ -119,13 +121,13 @@ async function getChatStats(): Promise<ChatStats> {
 
 export default async function DashboardPage() {
   const monthlyData = mockMonthlyData; // User & Counsellor Growth can still use mock for now
-  
+
   // const {user:admin} = useAuth()
   const counsellors = await getCounsellorsForDashboard();
   const totalUsersCount = await getUsersCount();
   const chatStats = await getChatStats();
 
-  console.log(counsellors,"counsellors counsellors")
+  console.log(counsellors, "counsellors counsellors")
 
   const chatStatusForPieChart: ChatStatusData[] = [
     { name: 'Pending', value: chatStats.pending, fill: 'var(--color-chart-1)' },
@@ -137,13 +139,13 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       {/* Header with welcome and quick action */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
-       
+
         <Welcome />
         <div className="flex items-center gap-4">
           <Link href="/invite?userType=counselor">
             <Button className="bg-primary text-white">+ Invite Counsellor</Button>
           </Link>
-         
+
         </div>
       </div>
 
@@ -187,7 +189,7 @@ export default async function DashboardPage() {
             data={chatStatusForPieChart}
             chartType="pie"
             config={chatStatusChartConfig}
-            dataKeys={[{name: "value"}]}
+            dataKeys={[{ name: "value" }]}
           />
         </div>
       </div>
