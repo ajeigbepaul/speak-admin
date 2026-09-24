@@ -10,7 +10,9 @@ export type ActivityType =
   | "admin_invited"
   | "category_created"
   | "category_updated"
-  | "category_deleted";
+  | "category_deleted"
+  | "account_deactivated"
+  | "account_reactivated";
 
 export interface ActivityEntry {
   type: ActivityType;

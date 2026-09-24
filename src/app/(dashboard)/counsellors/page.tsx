@@ -38,6 +38,8 @@ async function getCounsellors(): Promise<Counsellor[]> {
         createdAt:   createdAtString,
         isVerified:  data.isVerified || false,
         status,
+        accountDeactivated: data.accountStatus === "deactivated",
+        deactivatedAt: data.deactivatedAt?.toDate ? data.deactivatedAt.toDate().toISOString() : undefined,
       } as unknown as Counsellor;
     });
   } catch (error) {

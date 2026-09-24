@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { reactivateAccountAction } from "@/actions/accountActions";
 import {
   collection,
   query,
@@ -92,6 +93,7 @@ interface ExtendedUser extends AppUser {
   formattedDate: string;
   avatarUrl?: string;
   disabled?: boolean; // account suspension flag
+  deactivated?: boolean; // user deactivated (soft-deleted) their account from the app
   lastLoginAt?: any; // Firestore Timestamp | ISO string | Date
   updatedAt?: any; // optional updatedAt for convenience
 }
@@ -181,6 +183,7 @@ export function UserManagement() {
           formattedDate: format(createdDate, "PPP"),
           avatarUrl: data.photoURL || data.profilePic || undefined,
           disabled: data.disabled ?? false,
+          deactivated: data.accountStatus === "deactivated",
           lastLoginAt: lastLogin,
           updatedAt: data.updatedAt,
         };
@@ -223,8 +226,9 @@ export function UserManagement() {
     if (statusFilter !== "all") {
       filtered = filtered.filter(
         (user) =>
-          (statusFilter === "active" && !user.disabled) ||
-          (statusFilter === "suspended" && user.disabled)
+          (statusFilter === "active" && !user.disabled && !user.deactivated) ||
+          (statusFilter === "suspended" && user.disabled) ||
+          (statusFilter === "deactivated" && user.deactivated)
       );
     }
 
@@ -312,6 +316,20 @@ export function UserManagement() {
     } catch (error) {
       console.error("Error suspending user:", error);
       toast.error("Failed to suspend user. Please try again.");
+    }
+  };
+
+  // Restores an account the user deactivated from the app (re-enables sign-in)
+  const handleReactivateUser = async (user: ExtendedUser) => {
+    const idToken = await auth.currentUser?.getIdToken();
+    const result = await reactivateAccountAction(idToken ?? "", user.id);
+    if (result.success) {
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, deactivated: false } : u))
+      );
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
     }
   };
 
@@ -415,6 +433,7 @@ export function UserManagement() {
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="suspended">Suspended</SelectItem>
+              <SelectItem value="deactivated">Deactivated</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -491,9 +510,13 @@ export function UserManagement() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.disabled ? "outline" : "default"}>
-                        {user.disabled ? "Suspended" : "Active"}
-                      </Badge>
+                      {user.deactivated ? (
+                        <Badge variant="destructive">Deactivated</Badge>
+                      ) : (
+                        <Badge variant={user.disabled ? "outline" : "default"}>
+                          {user.disabled ? "Suspended" : "Active"}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>{user.formattedDate}</TableCell>
                     <TableCell className="text-right">
@@ -517,6 +540,12 @@ export function UserManagement() {
                             Edit user
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+                          {user.deactivated && (
+                            <DropdownMenuItem onClick={() => handleReactivateUser(user)}>
+                              <UserCheck className="mr-2 h-4 w-4" />
+                              Reactivate account
+                            </DropdownMenuItem>
+                          )}
                           {canDeleteOrSuspend && (
                             <>
                               {user.disabled ? (

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
+import type { DecodedIdToken } from "firebase-admin/auth";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
 // Helpers for the /api/mobile/* routes the Speak mobile app calls. These
@@ -15,18 +16,22 @@ cloudinary.config({
 
 export { cloudinary };
 
-// Returns the Firebase uid from the "Authorization: Bearer <idToken>" header,
-// or null if the token is missing or invalid.
-export async function getRequestUid(req: NextRequest): Promise<string | null> {
+// Verifies the "Authorization: Bearer <idToken>" header. Returns the decoded
+// token, or null if it's missing, invalid or revoked.
+export async function getRequestToken(req: NextRequest): Promise<DecodedIdToken | null> {
   const header = req.headers.get("authorization") || "";
   const idToken = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!idToken) return null;
   try {
-    const decoded = await adminAuth.verifyIdToken(idToken);
-    return decoded.uid;
+    return await adminAuth.verifyIdToken(idToken, true);
   } catch {
     return null;
   }
+}
+
+// Returns the Firebase uid from the request's ID token, or null.
+export async function getRequestUid(req: NextRequest): Promise<string | null> {
+  return (await getRequestToken(req))?.uid ?? null;
 }
 
 export function isValidDocId(id: unknown): id is string {

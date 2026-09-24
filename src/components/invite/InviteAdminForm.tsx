@@ -2,6 +2,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -32,6 +33,7 @@ type InviteUserFormValues = z.infer<typeof inviteUserSchema>;
 
 export function InviteAdminForm() {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const form = useForm<InviteUserFormValues>({
     resolver: zodResolver(inviteUserSchema),
@@ -54,8 +56,10 @@ export function InviteAdminForm() {
       result = await inviteAdminOrUserAction({ email: data.email, name: data.name, role: data.role });
 
       if (result.success) {
-        toast.success(result.message);
+        // If the email failed the message holds the set-password link, so keep it up long enough to copy
+        toast.success(result.message, result.error === "email_failed" ? { duration: 20000 } : undefined);
         form.reset();
+        router.push("/");
       } else {
         toast.error(result.message);
       }

@@ -47,6 +47,8 @@ export interface Counsellor {
   phoneNumber?: string;
   profilePic?: string;
   specialization?: string;
+  accountDeactivated?: boolean; // counsellor deactivated their account from the app
+  deactivatedAt?: string;       // ISO
 }
 
 export interface DashboardAnalytics {
@@ -137,4 +139,36 @@ export interface SetInitialPasswordInput {
   email: string;
   temporaryPassword?: string;
   newPassword: string;
+}
+
+// Counsellor activity (view sheet) — one entry per chat the counsellor handled
+export type CounselorChatStatus = "active" | "completed" | "reassign_requested" | "handed_off" | "reopened" | "pending";
+
+export interface CounselorChatActivity {
+  postId: string;
+  status: CounselorChatStatus;
+  category?: string;
+  issue?: string;
+  user: { id: string; name: string; email?: string; profilePic?: string };
+  startedAt?: string;       // ISO — acceptedAt, or the counsellor's first message for older chats
+  endedAt?: string;         // ISO — unset while the chat is still active
+  lastMessageAt?: string;   // ISO
+  durationMinutes?: number;
+  totalMessages: number;
+  counselorMessages: number;
+  closedReason?: string;
+  reassignReason?: string;
+}
+
+export interface CounselorActivity {
+  stats: {
+    totalChats: number;
+    activeChats: number;
+    completedChats: number;
+    uniqueUsers: number;
+    messagesSent: number;
+    avgDurationMinutes: number | null;
+    reassignmentsRequested: number;
+  };
+  chats: CounselorChatActivity[];
 }

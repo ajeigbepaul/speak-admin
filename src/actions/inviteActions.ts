@@ -52,6 +52,7 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
     if (!mailResult.success) {
       return {
         success: true,
+        error: "email_failed",
         message: `${role} '${name}' invited. Email failed: ${mailResult.message}. Set password link: ${setPasswordLink}`,
       };
     }
@@ -124,6 +125,7 @@ export async function inviteCounselorAction(data: InviteCounselorInput): Promise
     if (!mailResult.success) {
       return {
         success: true,
+        error: "email_failed",
         message: `Counselor invited. Email failed: ${mailResult.message}. Set password link: ${setPasswordLink}`,
       };
     }

@@ -188,7 +188,10 @@ export function CounsellorTable({ initialCounsellors }: CounsellorTableProps) {
                         <AvatarFallback>{counsellor.fullName.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{counsellor.fullName}</div>
+                        <div className="font-medium flex items-center gap-2">
+                          {counsellor.fullName}
+                          {counsellor.accountDeactivated && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Deactivated</Badge>}
+                        </div>
                         <div className="text-xs text-muted-foreground hidden md:block">{counsellor.email}</div>
                       </div>
                     </div>
