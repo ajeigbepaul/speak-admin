@@ -107,11 +107,11 @@ export function buildAdminInviteEmail(name: string, role: string, setPasswordLin
   return baseTemplate(content);
 }
 
-export function buildCounselorInviteEmail(name: string, setPasswordLink: string, tempPassword: string): string {
+export function buildCounselorInviteEmail(email: string, setPasswordLink: string, tempPassword: string): string {
   const content = `
     <h2 style="margin:0 0 8px 0;color:#111827;font-size:22px;font-weight:700;">You're invited to join Speak as a Counselor 🌿</h2>
     <p style="margin:0 0 24px 0;color:#6b7280;font-size:15px;line-height:1.6;">
-      Hi <strong style="color:#111827;">${name}</strong>, we'd love to have you on the Speak platform as a <strong style="color:#4f46e5;">Counselor</strong>.
+      Hi there! We'd love to have you on the Speak platform as a <strong style="color:#4f46e5;">Counselor</strong>.
       Click the button below to set your password and complete your profile.
     </p>
 
@@ -120,9 +120,9 @@ export function buildCounselorInviteEmail(name: string, setPasswordLink: string,
     <p style="margin:0 0 12px 0;color:#6b7280;font-size:13px;">Or copy this link into your browser:</p>
     <p style="margin:0 0 24px 0;word-break:break-all;color:#4f46e5;font-size:12px;font-family:monospace;background:#f5f3ff;padding:12px;border-radius:6px;border-left:3px solid #7c3aed;">${setPasswordLink}</p>
 
-    <p style="margin:0 0 8px 0;color:#374151;font-size:14px;font-weight:600;">Your temporary credentials:</p>
-    ${infoBox("Email", name)}
-    ${infoBox("Temporary Password", tempPassword)}
+    <p style="margin:0 0 8px 0;color:#374151;font-size:14px;font-weight:600;">Your login email:</p>
+    ${infoBox("Email", email)}
+    ${infoBox("Temporary Password (for reference)", tempPassword)}
 
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:8px;margin:24px 0 0 0;">
       <tr>
@@ -132,11 +132,43 @@ export function buildCounselorInviteEmail(name: string, setPasswordLink: string,
             1. Set your password using the link above<br/>
             2. Complete your counselor profile<br/>
             3. Our team will review and verify your account<br/>
-            4. You'll be notified once you're approved
+            4. You'll receive an email once you're approved
           </p>
         </td>
       </tr>
     </table>
+  `;
+  return baseTemplate(content);
+}
+
+export function buildApprovalEmail(name: string, email: string): string {
+  const content = `
+    <h2 style="margin:0 0 8px 0;color:#111827;font-size:22px;font-weight:700;">You're approved! Welcome to Speak 🎉</h2>
+    <p style="margin:0 0 24px 0;color:#6b7280;font-size:15px;line-height:1.6;">
+      Hi <strong style="color:#111827;">${name || 'there'}</strong>, great news — your counselor application has been reviewed and <strong style="color:#16a34a;">approved</strong>!
+      You can now log in to the Speak app and start supporting users.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin:0 0 24px 0;">
+      <tr>
+        <td style="padding:20px 24px;">
+          <p style="margin:0 0 12px 0;color:#166534;font-size:14px;font-weight:700;">Next steps to get started:</p>
+          <p style="margin:0;color:#15803d;font-size:14px;line-height:2;">
+            1. Download the <strong>Speak</strong> mobile app on your device<br/>
+            2. Open the app and tap <strong>Log In</strong><br/>
+            3. Enter your email: <strong>${email}</strong><br/>
+            4. Use the password you set during profile setup<br/>
+            5. You're in — start making a difference!
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    ${infoBox("Your Login Email", email)}
+
+    <p style="margin:24px 0 0 0;color:#9ca3af;font-size:13px;line-height:1.5;">
+      If you have any questions or need help getting started, please reach out to the Speak admin team.
+    </p>
   `;
   return baseTemplate(content);
 }

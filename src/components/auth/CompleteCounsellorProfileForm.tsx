@@ -8,7 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "react-hot-toast";
 import { auth } from "@/lib/firebase";
-import { getInvitedCounselorData, completeProfileAction } from "@/actions/profileActions";
+import { completeProfileAction, getActiveCategoriesAction } from "@/actions/profileActions";
+import { Check } from "lucide-react";
+
+interface CategoryOption {
+  id: string;
+  name: string;
+}
 
 export function CompleteCounsellorProfileForm() {
   const router = useRouter();
@@ -19,19 +25,24 @@ export function CompleteCounsellorProfileForm() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState({ street: "", city: "", state: "", country: "" });
   const [occupation, setOccupation] = useState("");
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const emailFromQuery = searchParams.get("email");
-    if (!emailFromQuery) return;
-
-    const decoded = decodeURIComponent(emailFromQuery);
-    setEmail(decoded);
-
-    getInvitedCounselorData(decoded).then(data => {
-      if (data?.fullName) setFullName(data.fullName);
-    });
+    if (emailFromQuery) setEmail(decodeURIComponent(emailFromQuery));
   }, [searchParams]);
+
+  useEffect(() => {
+    getActiveCategoriesAction().then(setCategories);
+  }, []);
+
+  const toggleCategory = (name: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(name) ? prev.filter(c => c !== name) : [...prev, name]
+    );
+  };
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAddress(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -55,6 +66,7 @@ export function CompleteCounsellorProfileForm() {
       phoneNumber,
       address,
       occupation,
+      preferredCategories: selectedCategories,
     });
 
     if (result.success) {
@@ -95,6 +107,36 @@ export function CompleteCounsellorProfileForm() {
             <Label htmlFor="occupation">Occupation / Specialization</Label>
             <Input id="occupation" value={occupation} onChange={e => setOccupation(e.target.value)} required />
           </div>
+
+          {categories.length > 0 && (
+            <div>
+              <Label>Preferred Categories</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Select the support areas you're most comfortable with. You can choose more than one.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {categories.map(cat => {
+                  const selected = selectedCategories.includes(cat.name);
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => toggleCategory(cat.name)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                        selected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background text-foreground border-border hover:bg-muted"
+                      }`}
+                    >
+                      {selected && <Check className="h-3 w-3" />}
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? "Submitting..." : "Submit Profile"}
           </Button>

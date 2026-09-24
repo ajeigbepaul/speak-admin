@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal, KeyRound, Eye, EyeOff, UserPlus } from "lucide-react";
+import { AlertCircle, KeyRound, Eye, EyeOff } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -30,7 +30,7 @@ export function SetInitialPasswordForm() {
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
-  const [tempPass, setTempPass] = useState(""); // For display or potential verification if enhanced later
+  const [, setTempPass] = useState("");
   const [inviteType, setInviteType] = useState<string | null>(null);
 
   const [newPassword, setNewPassword] = useState("");
@@ -95,24 +95,26 @@ export function SetInitialPasswordForm() {
       }
 
     } catch (err: any) {
-      let friendlyMessage = "An unexpected error occurred. Please try again.";
+      let friendlyMessage = "Something went wrong. Please try again.";
       if (err.code) {
         switch (err.code) {
           case 'auth/email-already-in-use':
-            friendlyMessage = "This email address is already associated with an account. You can try logging in.";
+            friendlyMessage = "An account already exists for this email. Please log in instead.";
             break;
           case 'auth/weak-password':
-            friendlyMessage = "The password is too weak. Please choose a stronger password.";
+            friendlyMessage = "Your password is too short. Please use at least 6 characters.";
             break;
           case 'auth/invalid-email':
-            friendlyMessage = "The email address is not valid.";
+            friendlyMessage = "This email address doesn't look right. Please contact support.";
+            break;
+          case 'auth/network-request-failed':
+            friendlyMessage = "No internet connection. Please check your network and try again.";
             break;
           default:
-            friendlyMessage = `Operation failed: ${err.message}`;
+            friendlyMessage = "Something went wrong. Please try again or contact support.";
         }
       }
       setError(friendlyMessage);
-      console.error("Set initial password failed:", err);
     } finally {
       setIsLoading(false);
     }
@@ -139,8 +141,8 @@ export function SetInitialPasswordForm() {
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
-            <Terminal className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Invalid Link</AlertTitle>
             <AlertDescription>{error || "This invitation link is invalid or has missing information. Please use the link provided in your email."}</AlertDescription>
           </Alert>
           <Button onClick={() => router.push('/login')} className="w-full mt-4">
@@ -224,9 +226,22 @@ export function SetInitialPasswordForm() {
           </div>
           {error && (
             <Alert variant="destructive">
-              <Terminal className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Oops!</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <span>{error}</span>
+                {error.includes("log in") && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 w-full border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={() => router.push('/login')}
+                  >
+                    Go to Login
+                  </Button>
+                )}
+              </AlertDescription>
             </Alert>
           )}
         </CardContent>

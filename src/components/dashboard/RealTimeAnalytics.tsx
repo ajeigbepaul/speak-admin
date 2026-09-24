@@ -1,287 +1,188 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, Timestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, Timestamp, orderBy } from 'firebase/firestore';
 import { AnalyticsChart } from './AnalyticsChart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MonthlyData, ChatStatusData } from '@/lib/types';
+import type { MonthlyData, ChatStatusData } from '@/lib/types';
 
-// Chart configurations
 const userGrowthConfig = {
-  users: { label: "Users", color: "hsl(var(--chart-1))" },
+  users:       { label: "Users",       color: "hsl(var(--chart-1))" },
   counsellors: { label: "Counsellors", color: "hsl(var(--chart-2))" },
 };
 
 const chatStatusConfig = {
-  Pending: { label: "Pending", color: "hsl(var(--chart-1))" },
-  Active: { label: "Active", color: "hsl(var(--chart-2))" },
+  Pending:  { label: "Pending",  color: "hsl(var(--chart-1))" },
+  Active:   { label: "Active",   color: "hsl(var(--chart-2))" },
   Resolved: { label: "Resolved", color: "hsl(var(--chart-3))" },
 };
 
-const timeRanges = ['24h', '7d', '30d', '90d'];
+const TIME_RANGES = ['24h', '7d', '30d', '90d'] as const;
+type TimeRange = typeof TIME_RANGES[number];
+
+function getStartDate(range: TimeRange): Date {
+  const d = new Date();
+  if (range === '24h') d.setDate(d.getDate() - 1);
+  else if (range === '7d') d.setDate(d.getDate() - 7);
+  else if (range === '30d') d.setDate(d.getDate() - 30);
+  else d.setDate(d.getDate() - 90);
+  return d;
+}
+
+function dateKey(date: Date, range: TimeRange): string {
+  if (range === '24h') return `${date.getHours()}:00`;
+  if (range === '7d') return date.toISOString().split('T')[0];
+  const month = date.toLocaleString('default', { month: 'short' });
+  return range === '30d' ? `${month} ${date.getDate()}` : month;
+}
 
 export function RealTimeAnalytics() {
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('30d');
+  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [userGrowthData, setUserGrowthData] = useState<MonthlyData[]>([]);
   const [chatStatusData, setChatStatusData] = useState<ChatStatusData[]>([]);
   const [activeUsers, setActiveUsers] = useState(0);
 
+  const growthRef = useRef<MonthlyData[]>([]);
+
   useEffect(() => {
     setIsLoading(true);
-    
-    // Calculate date range based on selected time range
-    const now = new Date();
-    let startDate = new Date();
-    
-    switch(timeRange) {
-      case '24h':
-        startDate.setDate(now.getDate() - 1);
-        break;
-      case '7d':
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case '30d':
-        startDate.setDate(now.getDate() - 30);
-        break;
-      case '90d':
-        startDate.setDate(now.getDate() - 90);
-        break;
+    setUserGrowthData([]);
+    setChatStatusData([]);
+    growthRef.current = [];
+
+    const startTimestamp = Timestamp.fromDate(getStartDate(timeRange));
+    const yesterday = Timestamp.fromDate(new Date(Date.now() - 86400_000));
+
+    function mergeGrowth(docs: { data(): any }[], key: 'users' | 'counsellors') {
+      const grouped: Record<string, number> = {};
+      docs.forEach(doc => {
+        const ts: Timestamp | undefined = doc.data().createdAt;
+        if (!ts) return;
+        const k = dateKey(ts.toDate(), timeRange);
+        grouped[k] = (grouped[k] ?? 0) + 1;
+      });
+
+      const next = [...growthRef.current];
+      Object.entries(grouped).forEach(([month, count]) => {
+        const idx = next.findIndex(d => d.month === month);
+        if (idx >= 0) {
+          next[idx] = { ...next[idx], [key]: count };
+        } else {
+          next.push({ month, users: 0, counsellors: 0, [key]: count } as MonthlyData);
+        }
+      });
+      next.sort((a, b) => a.month.localeCompare(b.month));
+      growthRef.current = next;
+      setUserGrowthData([...next]);
     }
-    
-    const startTimestamp = Timestamp.fromDate(startDate);
-    
-    // Fetch user growth data
-    const fetchUserGrowth = async () => {
-      // Users collection listener
-      const usersQuery = query(
-        collection(db, 'users'),
-        where('createdAt', '>=', startTimestamp),
-        orderBy('createdAt', 'asc')
-      );
-      
-      // Counselors collection listener
-      const counselorsQuery = query(
-        collection(db, 'counselors'),
-        where('createdAt', '>=', startTimestamp),
-        orderBy('createdAt', 'asc')
-      );
-      
-      // Active users (users with recent activity)
-      const activeUsersQuery = query(
-        collection(db, 'users'),
-        where('lastActive', '>=', Timestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000))),
-        limit(1000)
-      );
-      
-      // Chat status data
-      const pendingChatsQuery = query(
-        collection(db, 'posts'),
-        where('status', '==', 'pending')
-      );
-      
-      const activeChatsQuery = query(
-        collection(db, 'posts'),
-        where('status', '==', 'active')
-      );
-      
-      const resolvedChatsQuery = query(
-        collection(db, 'posts'),
-        where('status', '==', 'resolved')
-      );
-      
-      // Set up listeners
-      const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
-        processUserData(snapshot.docs, 'users');
-      }, (error) => {
-        console.error("Error fetching users data:", error);
+
+    const unsubUsers = onSnapshot(
+      query(collection(db, 'users'), where('createdAt', '>=', startTimestamp), orderBy('createdAt', 'asc')),
+      snap => mergeGrowth(snap.docs, 'users'),
+      err => console.error('users snapshot:', err),
+    );
+
+    const unsubCounselors = onSnapshot(
+      query(collection(db, 'counselors'), where('createdAt', '>=', startTimestamp), orderBy('createdAt', 'asc')),
+      snap => mergeGrowth(snap.docs, 'counsellors'),
+      err => console.error('counselors snapshot:', err),
+    );
+
+    const unsubActiveUsers = onSnapshot(
+      query(collection(db, 'users'), where('lastActive', '>=', yesterday)),
+      snap => setActiveUsers(snap.size),
+      err => console.error('activeUsers snapshot:', err),
+    );
+
+    function updateChatStatus(status: 'Pending' | 'Active' | 'Resolved', count: number) {
+      const fill = status === 'Pending' ? 'var(--color-chart-1)' :
+                   status === 'Active'  ? 'var(--color-chart-2)' : 'var(--color-chart-3)';
+      setChatStatusData(prev => {
+        const next = [...prev];
+        const idx = next.findIndex(d => d.name === status);
+        if (idx >= 0) next[idx] = { ...next[idx], value: count, fill };
+        else next.push({ name: status, value: count, fill });
+        return next;
       });
-      
-      const unsubscribeCounselors = onSnapshot(counselorsQuery, (snapshot) => {
-        processUserData(snapshot.docs, 'counsellors');
-      }, (error) => {
-        console.error("Error fetching counselors data:", error);
-      });
-      
-      const unsubscribeActiveUsers = onSnapshot(activeUsersQuery, (snapshot) => {
-        setActiveUsers(snapshot.size);
-      }, (error) => {
-        console.error("Error fetching active users:", error);
-      });
-      
-      const unsubscribePendingChats = onSnapshot(pendingChatsQuery, (snapshot) => {
-        updateChatStatusData('Pending', snapshot.size);
-      }, (error) => {
-        console.error("Error fetching pending chats:", error);
-      });
-      
-      const unsubscribeActiveChats = onSnapshot(activeChatsQuery, (snapshot) => {
-        updateChatStatusData('Active', snapshot.size);
-      }, (error) => {
-        console.error("Error fetching active chats:", error);
-      });
-      
-      const unsubscribeResolvedChats = onSnapshot(resolvedChatsQuery, (snapshot) => {
-        updateChatStatusData('Resolved', snapshot.size);
-      }, (error) => {
-        console.error("Error fetching resolved chats:", error);
-      });
-      
-      setIsLoading(false);
-      
-      // Cleanup listeners on unmount or time range change
-      return () => {
-        unsubscribeUsers();
-        unsubscribeCounselors();
-        unsubscribeActiveUsers();
-        unsubscribePendingChats();
-        unsubscribeActiveChats();
-        unsubscribeResolvedChats();
-      };
+    }
+
+    const unsubPending  = onSnapshot(query(collection(db, 'posts'), where('status', '==', 'pending')),
+      snap => updateChatStatus('Pending',  snap.size), err => console.error('pending:', err));
+    const unsubActive   = onSnapshot(query(collection(db, 'posts'), where('status', '==', 'accepted')),
+      snap => updateChatStatus('Active',   snap.size), err => console.error('active:', err));
+    const unsubResolved = onSnapshot(query(collection(db, 'posts'), where('status', '==', 'completed')),
+      snap => updateChatStatus('Resolved', snap.size), err => console.error('resolved:', err));
+
+    setIsLoading(false);
+
+    return () => {
+      unsubUsers(); unsubCounselors(); unsubActiveUsers();
+      unsubPending(); unsubActive(); unsubResolved();
     };
-    
-    fetchUserGrowth();
   }, [timeRange]);
-  
-  // Process user data for growth chart
-  const processUserData = (docs: any[], userType: 'users' | 'counsellors') => {
-    // Group by day, week, or month based on time range
-    const groupedData: Record<string, number> = {};
-    
-    docs.forEach(doc => {
-      const data = doc.data();
-      if (data.createdAt) {
-        const date = data.createdAt.toDate();
-        let key = '';
-        
-        // Format the key based on time range
-        if (timeRange === '24h') {
-          key = `${date.getHours()}:00`;
-        } else if (timeRange === '7d') {
-          key = date.toISOString().split('T')[0];
-        } else {
-          // For 30d and 90d, group by week or month
-          const month = date.toLocaleString('default', { month: 'short' });
-          const day = date.getDate();
-          key = timeRange === '30d' ? `${month} ${day}` : month;
-        }
-        
-        if (!groupedData[key]) {
-          groupedData[key] = 0;
-        }
-        groupedData[key]++;
-      }
-    });
-    
-    // Convert to array format for chart
-    const chartData = Object.entries(groupedData).map(([key, value]) => ({
-      month: key,
-      [userType]: value
-    }));
-    
-    // Merge with existing data
-    setUserGrowthData(prevData => {
-      const newData = [...prevData];
-      
-      chartData.forEach(item => {
-        const existingIndex = newData.findIndex(d => d.month === item.month);
-        if (existingIndex >= 0) {
-          newData[existingIndex] = { ...newData[existingIndex], ...item };
-        } else {
-          newData.push({ 
-            month: item.month, 
-            users: userType === 'users' ? item.users : 0,
-            counsellors: userType === 'counsellors' ? item.counsellors : 0
-          } as MonthlyData);
-        }
-      });
-      
-      // Sort by date/time
-      return newData.sort((a, b) => a.month.localeCompare(b.month));
-    });
-  };
-  
-  // Update chat status data for pie chart
-  const updateChatStatusData = (status: 'Pending' | 'Active' | 'Resolved', count: number) => {
-    setChatStatusData(prevData => {
-      const newData = [...prevData];
-      const existingIndex = newData.findIndex(d => d.name === status);
-      
-      if (existingIndex >= 0) {
-        newData[existingIndex] = { 
-          ...newData[existingIndex], 
-          value: count,
-          fill: status === 'Pending' ? 'var(--color-chart-1)' : 
-                status === 'Active' ? 'var(--color-chart-2)' : 
-                'var(--color-chart-3)'
-        };
-      } else {
-        newData.push({ 
-          name: status, 
-          value: count,
-          fill: status === 'Pending' ? 'var(--color-chart-1)' : 
-                status === 'Active' ? 'var(--color-chart-2)' : 
-                'var(--color-chart-3)'
-        });
-      }
-      
-      return newData;
-    });
-  };
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Real-Time Analytics</CardTitle>
-        <CardDescription>Live data from your application</CardDescription>
-        <Tabs defaultValue={timeRange} onValueChange={setTimeRange} className="w-full">
-          <TabsList className="grid grid-cols-4 w-[400px]">
-            {timeRanges.map(range => (
-              <TabsTrigger key={range} value={range}>
-                {range}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="md:col-span-2">
-            {isLoading ? (
-              <Skeleton className="h-[300px] w-full" />
-            ) : (
-              <AnalyticsChart
-                title="User & Counsellor Growth"
-                description={`Registration trends (last ${timeRange})`}
-                data={userGrowthData}
-                chartType="line"
-                config={userGrowthConfig}
-                dataKeys={["users", "counsellors"]}
-                xAxisDataKey="month"
-                className="h-[300px]"
-              />
-            )}
-          </div>
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            {isLoading ? (
-              <Skeleton className="h-[300px] w-full" />
-            ) : (
-              <AnalyticsChart
-                title="Chat Status Overview"
-                description="Current distribution of chats"
-                data={chatStatusData}
-                chartType="pie"
-                config={chatStatusConfig}
-                dataKeys={[{name: "value"}]}
-                className="h-[300px]"
-              />
-            )}
-            <div className="mt-4 p-4 bg-muted rounded-lg">
-              <h3 className="font-medium mb-2">Active Users (24h)</h3>
-              <p className="text-2xl font-bold">{activeUsers}</p>
+            <CardTitle className="text-xl">Real-Time Analytics</CardTitle>
+            <CardDescription className="mt-1">Live data from your application</CardDescription>
+          </div>
+          <Tabs value={timeRange} onValueChange={v => setTimeRange(v as TimeRange)}>
+            <TabsList className="grid grid-cols-4 w-[360px]">
+              {TIME_RANGES.map(r => (
+                <TabsTrigger key={r} value={r} className="text-sm">{r}</TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-2">
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Growth chart — takes 2/3 width */}
+          <div className="lg:col-span-2">
+            {isLoading
+              ? <Skeleton className="h-[440px] w-full rounded-xl" />
+              : (
+                <AnalyticsChart
+                  title="User & Counsellor Growth"
+                  description={`Registration trends (last ${timeRange})`}
+                  data={userGrowthData}
+                  chartType="line"
+                  config={userGrowthConfig}
+                  dataKeys={["users", "counsellors"]}
+                  xAxisDataKey="month"
+                  className="h-[440px]"
+                />
+              )
+            }
+          </div>
+
+          {/* Right column — pie chart + active users */}
+          <div className="flex flex-col gap-5">
+            {isLoading
+              ? <Skeleton className="h-[340px] w-full rounded-xl" />
+              : (
+                <AnalyticsChart
+                  title="Chat Status Overview"
+                  description="Current distribution of chats"
+                  data={chatStatusData}
+                  chartType="pie"
+                  config={chatStatusConfig}
+                  dataKeys={[{ name: "value" }]}
+                  className="h-[340px]"
+                />
+              )
+            }
+            <div className="rounded-xl bg-muted px-6 py-5 flex-1 flex flex-col justify-center">
+              <p className="text-sm font-medium text-muted-foreground">Active Users (24h)</p>
+              <p className="text-5xl font-bold mt-2 tracking-tight">{activeUsers}</p>
+              <p className="text-xs text-muted-foreground mt-2">Users active in the last 24 hours</p>
             </div>
           </div>
         </div>

@@ -131,7 +131,6 @@ export interface InviteAdminOrUserInput {
 
 export interface InviteCounselorInput {
   email: string;
-  name: string;
 }
 
 export interface SetInitialPasswordInput {

@@ -5,6 +5,7 @@ import type { ActionResult, InviteAdminOrUserInput, InviteCounselorInput, UserRo
 import { revalidatePath } from "next/cache";
 import { sendMail } from "@/lib/email";
 import { buildAdminInviteEmail, buildCounselorInviteEmail } from "@/lib/emailTemplates";
+import { logActivity } from "@/actions/activityActions";
 import crypto from 'crypto';
 
 function generateTemporaryPassword(length = 12) {
@@ -58,6 +59,13 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
     revalidatePath("/admins");
     revalidatePath("/invite");
 
+    await logActivity({
+      type: "admin_invited",
+      title: "Admin Invited",
+      description: `${name} (${email}) was invited as ${role}`,
+      targetName: name,
+    });
+
     return {
       success: true,
       message: `${role.charAt(0).toUpperCase() + role.slice(1)} '${name}' invited successfully. An email has been sent to ${email}.`,
@@ -69,23 +77,23 @@ export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Pro
 }
 
 export async function inviteCounselorAction(data: InviteCounselorInput): Promise<ActionResult> {
-  const { email, name } = data;
+  const { email } = data;
 
-  if (!email || !name) {
-    return { success: false, message: "Missing required fields for counselor invitation." };
+  if (!email) {
+    return { success: false, message: "Email is required to invite a counselor." };
   }
 
   try {
     // Check for existing counselor
     const existing = await adminDb.collection('counselors').where('personalInfo.email', '==', email).get();
     if (!existing.empty) {
-      return { success: false, message: `A counselor with email ${email} already exists or has been invited.` };
+      return { success: false, message: `A counselor with email ${email} has already been invited.` };
     }
 
-    // Create counselor document
+    // Create counselor document (name will be filled in during profile completion)
     const newCounselorRef = adminDb.collection('counselors').doc();
     await newCounselorRef.set({
-      personalInfo:     { fullName: name, email },
+      personalInfo:     { email },
       professionalInfo: {},
       isVerified:       false,
       status:           "Invited" as CounsellorStatus,
@@ -97,7 +105,7 @@ export async function inviteCounselorAction(data: InviteCounselorInput): Promise
     await adminDb.collection('notifications').add({
       type:      "new_counsellor_invited",
       title:     "New Counsellor Invited",
-      message:   `${name} has been invited and is awaiting profile completion.`,
+      message:   `${email} has been invited and is awaiting profile completion.`,
       link:      `/counsellors?action=verify&id=${newCounselorRef.id}`,
       read:      false,
       timestamp: FieldValue.serverTimestamp(),
@@ -109,26 +117,34 @@ export async function inviteCounselorAction(data: InviteCounselorInput): Promise
     const mailResult = await sendMail({
       to: email,
       subject: "You're invited to join Speak as a Counselor",
-      text: `Hello ${name},\n\nYou have been invited to join Speak as a Counselor.\nSet your password: ${setPasswordLink}\nTemporary password: ${temporaryPassword}\n\nThanks,\nSpeak Admin Team`,
-      html: buildCounselorInviteEmail(name, setPasswordLink, temporaryPassword),
+      text: `Hello,\n\nYou have been invited to join Speak as a Counselor.\nSet your password: ${setPasswordLink}\n\nThanks,\nSpeak Team`,
+      html: buildCounselorInviteEmail(email, setPasswordLink, temporaryPassword),
     });
 
     if (!mailResult.success) {
       return {
         success: true,
-        message: `Counselor '${name}' invited. Email failed: ${mailResult.message}. Set password link: ${setPasswordLink}`,
+        message: `Counselor invited. Email failed: ${mailResult.message}. Set password link: ${setPasswordLink}`,
       };
     }
 
     revalidatePath("/counsellors");
     revalidatePath("/invite");
 
+    await logActivity({
+      type: "counselor_invited",
+      title: "Counselor Invited",
+      description: `${email} was invited to join as a counselor`,
+      targetId: newCounselorRef.id,
+      targetName: email,
+    });
+
     return {
       success: true,
-      message: `Counselor '${name}' invited successfully. An email has been sent to ${email}.`,
+      message: `Invitation sent successfully to ${email}.`,
     };
   } catch (error) {
     console.error("Error inviting counselor:", error);
-    return { success: false, message: `Failed to invite counselor: ${error instanceof Error ? error.message : String(error)}` };
+    return { success: false, message: `Failed to send invitation: ${error instanceof Error ? error.message : String(error)}` };
   }
 }

@@ -39,7 +39,18 @@ export function CategoryManagement() {
     try {
       setIsLoading(true);
       const snap = await getDocs(query(collection(db, "categories"), orderBy("name")));
-      setCategories(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+      setCategories(snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data.name ?? "",
+          icon: data.icon ?? "home-heart",
+          color: data.color ?? "#6B73FF",
+          description: data.description ?? "",
+          order: data.order ?? 0,
+          isActive: data.isActive ?? true,
+        };
+      }));
     } catch (e) {
       console.error("Load categories failed", e);
       toast.error("Failed to load categories");

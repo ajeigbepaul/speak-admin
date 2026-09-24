@@ -19,39 +19,38 @@ export function PendingVerificationsCard({ counsellors, className }: PendingVeri
   const pendingCounsellors = counsellors.filter(c => c.status === "Pending");
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <Card className={`flex flex-col ${className ?? ""}`}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center justify-between">
           Pending Verifications
           {pendingCounsellors.length > 0 && (
-            <Badge variant="destructive">{pendingCounsellors.length}</Badge>
+            <Badge variant="destructive" className="text-sm px-2.5 py-0.5">{pendingCounsellors.length}</Badge>
           )}
         </CardTitle>
         <CardDescription>Review and verify new counsellor registrations.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 p-0 overflow-hidden">
         {pendingCounsellors.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            <UserCheck className="mx-auto h-12 w-12 mb-2" />
-            <p>No pending verifications at the moment.</p>
+          <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+            <UserCheck className="h-14 w-14 mb-3 opacity-40" />
+            <p className="text-sm">No pending verifications at the moment.</p>
           </div>
         ) : (
-          <ScrollArea className="h-[300px]">
-            <ul className="space-y-3">
+          <ScrollArea className="h-[440px]">
+            <ul className="divide-y px-1">
               {pendingCounsellors.map((counsellor) => (
-                <li key={counsellor.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
+                <li key={counsellor.id} className="flex items-center justify-between px-5 py-4 hover:bg-muted/40 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-11 w-11">
                       <AvatarImage src={counsellor.personalInfo.profilePic} alt={counsellor.personalInfo.fullName} data-ai-hint="person avatar" />
-                      <AvatarFallback>{counsellor.personalInfo.fullName?.charAt(0) || 'C'}</AvatarFallback>
+                      <AvatarFallback className="text-base">{counsellor.personalInfo.fullName?.charAt(0) || 'C'}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium text-sm">{counsellor.personalInfo.fullName}</p>
+                      <p className="font-semibold text-sm">{counsellor.personalInfo.fullName}</p>
                       <p className="text-xs text-muted-foreground">{counsellor.personalInfo.email}</p>
                     </div>
                   </div>
                   <Button asChild variant="outline" size="sm">
-                    {/* Link to the counsellors page and pass params to auto-open dialog */}
                     <Link href={`/counsellors?action=verify&id=${counsellor.id}`}>Review</Link>
                   </Button>
                 </li>

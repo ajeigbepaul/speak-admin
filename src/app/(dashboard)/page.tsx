@@ -1,27 +1,15 @@
 import { StatCard } from "@/components/dashboard/StatCard";
-import { AnalyticsChart } from "@/components/dashboard/AnalyticsChart";
 import { PendingVerificationsCard } from "@/components/dashboard/PendingVerificationsCard";
-import { mockMonthlyData } from "@/lib/mockData";
-import type { Counsellor, ChatStatusData } from '@/lib/types';
+import { RealTimeAnalytics } from "@/components/dashboard/RealTimeAnalytics";
+import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
+import type { Counsellor } from '@/lib/types';
 import { Users, UserCheck, MessageSquare, ListChecks } from "lucide-react";
-import type { ChartConfig } from "@/components/ui/chart";
 import { adminDb } from '@/lib/firebase-admin';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Welcome from "@/components/dashboard/Welcome";
 
 export const dynamic = 'force-dynamic';
-
-const monthlyChartConfig = {
-  users: { label: "Users", color: "hsl(var(--chart-1))" },
-  counsellors: { label: "Counsellors", color: "hsl(var(--chart-2))" },
-} satisfies ChartConfig;
-
-const chatStatusChartConfig = {
-  Pending: { label: "Pending", color: "hsl(var(--chart-1))" },
-  Active: { label: "Active", color: "hsl(var(--chart-2))" },
-  Resolved: { label: "Resolved", color: "hsl(var(--chart-3))" },
-} satisfies ChartConfig;
 
 async function getCounsellorsForDashboard(): Promise<Counsellor[]> {
   try {
@@ -30,16 +18,14 @@ async function getCounsellorsForDashboard(): Promise<Counsellor[]> {
       const data = doc.data();
 
       let status: Counsellor['status'] = 'Pending';
-      if (data.status && ["Pending", "Verified", "Rejected"].includes(data.status)) {
+      if (data.status && ["Pending", "Verified", "Rejected", "Invited"].includes(data.status)) {
         status = data.status as Counsellor['status'];
       } else {
         status = data.isVerified ? 'Verified' : 'Pending';
       }
 
       let createdAtString = new Date().toISOString();
-      if (data.createdAt?.toDate) {
-        createdAtString = data.createdAt.toDate().toISOString();
-      }
+      if (data.createdAt?.toDate) createdAtString = data.createdAt.toDate().toISOString();
 
       return {
         id: doc.id,
@@ -66,8 +52,7 @@ async function getUsersCount(): Promise<number> {
   try {
     const snapshot = await adminDb.collection('users').count().get();
     return snapshot.data().count;
-  } catch (error) {
-    console.error("Error fetching users count:", error);
+  } catch {
     return 0;
   }
 }
@@ -84,8 +69,7 @@ async function getChatStats(): Promise<{ pending: number; active: number; resolv
       active:   active.data().count,
       resolved: resolved.data().count,
     };
-  } catch (error) {
-    console.error("Error fetching chat stats:", error);
+  } catch {
     return { pending: 0, active: 0, resolved: 0 };
   }
 }
@@ -97,75 +81,42 @@ export default async function DashboardPage() {
     getChatStats(),
   ]);
 
-  const chatStatusForPieChart: ChatStatusData[] = [
-    { name: 'Pending',  value: chatStats.pending,  fill: 'var(--color-chart-1)' },
-    { name: 'Active',   value: chatStats.active,   fill: 'var(--color-chart-2)' },
-    { name: 'Resolved', value: chatStats.resolved, fill: 'var(--color-chart-3)' },
-  ];
-
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
+    <div className="space-y-10 p-1">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <Welcome />
-        <div className="flex items-center gap-4">
-          <Link href="/invite?userType=counselor">
-            <Button className="bg-primary text-white">+ Invite Counsellor</Button>
-          </Link>
-        </div>
+        <Link href="/invite?userType=counselor">
+          <Button className="bg-primary text-white px-6 py-5 text-base">+ Invite Counsellor</Button>
+        </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <Link href="/admins" className="cursor-pointer">
+      {/* Stat cards */}
+      <div className="grid gap-5 grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <Link href="/admins" className="block">
           <StatCard title="Total Users" value={totalUsersCount} icon={Users} description="Registered users" />
         </Link>
-        <Link href="/counsellors" className="cursor-pointer">
+        <Link href="/counsellors" className="block">
           <StatCard title="Total Counsellors" value={counsellors.length} icon={UserCheck} description="Counsellors on platform" />
         </Link>
-        <Link href="/counsellors?status=pending" className="cursor-pointer">
-          <StatCard title="Pending Chats" value={chatStats.pending} icon={MessageSquare} description="Awaiting counsellor response" />
+        <Link href="/counsellors?status=pending" className="block">
+          <StatCard title="Pending Chats" value={chatStats.pending} icon={MessageSquare} description="Awaiting response" />
         </Link>
-        <Link href="/counsellors?status=active" className="cursor-pointer">
+        <Link href="/counsellors?status=active" className="block">
           <StatCard title="Active Chats" value={chatStats.active} icon={MessageSquare} description="Ongoing conversations" className="text-primary" />
         </Link>
-        <Link href="/counsellors?status=resolved" className="cursor-pointer">
+        <Link href="/counsellors?status=resolved" className="block col-span-2 lg:col-span-1">
           <StatCard title="Resolved Cases" value={chatStats.resolved} icon={ListChecks} description="Successfully concluded" />
         </Link>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div className="md:col-span-2 lg:col-span-2">
-          <AnalyticsChart
-            title="User & Counsellor Growth"
-            description="Monthly registration trends"
-            data={mockMonthlyData}
-            chartType="line"
-            config={monthlyChartConfig}
-            dataKeys={["users", "counsellors"]}
-            xAxisDataKey="month"
-            className="h-full"
-          />
-        </div>
-        <div>
-          <AnalyticsChart
-            title="Chat Status Overview"
-            description="Distribution of chat statuses"
-            data={chatStatusForPieChart}
-            chartType="pie"
-            config={chatStatusChartConfig}
-            dataKeys={[{ name: "value" }]}
-          />
-        </div>
-      </div>
+      {/* Real-time analytics — full width */}
+      <RealTimeAnalytics />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <div>
-          <h2 className="text-xl font-semibold mb-2">Pending Verifications</h2>
-          <PendingVerificationsCard counsellors={counsellors} />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold mb-2">Recent Activity</h2>
-          <div className="bg-muted rounded-lg p-4 text-muted-foreground text-sm">No recent activity yet.</div>
-        </div>
+      {/* Bottom row — cards stretch to equal height */}
+      <div className="grid gap-6 md:grid-cols-2 items-stretch">
+        <PendingVerificationsCard counsellors={counsellors} className="h-full" />
+        <RecentActivityFeed />
       </div>
     </div>
   );

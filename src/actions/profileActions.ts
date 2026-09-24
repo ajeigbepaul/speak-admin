@@ -2,6 +2,19 @@
 
 import { adminDb, FieldValue } from "@/lib/firebase-admin";
 import type { ActionResult } from "@/lib/types";
+import { logActivity } from "@/actions/activityActions";
+
+export async function getActiveCategoriesAction(): Promise<{ id: string; name: string }[]> {
+  try {
+    const snap = await adminDb
+      .collection("categories")
+      .where("isActive", "==", true)
+      .get();
+    return snap.docs.map(doc => ({ id: doc.id, name: doc.data().name as string }));
+  } catch {
+    return [];
+  }
+}
 
 export async function getInvitedCounselorData(email: string): Promise<{ fullName?: string } | null> {
   try {
@@ -26,10 +39,11 @@ interface CompleteProfileInput {
   phoneNumber: string;
   address: { street: string; city: string; state: string; country: string };
   occupation: string;
+  preferredCategories: string[];
 }
 
 export async function completeProfileAction(data: CompleteProfileInput): Promise<ActionResult> {
-  const { uid, email, fullName, phoneNumber, address, occupation } = data;
+  const { uid, email, fullName, phoneNumber, address, occupation, preferredCategories } = data;
 
   if (!uid || !email) {
     return { success: false, message: "Missing required fields." };
@@ -60,6 +74,7 @@ export async function completeProfileAction(data: CompleteProfileInput): Promise
         professionalInfo: {
           ...(invitedDocData.professionalInfo || {}),
           occupation,
+          preferredCategories,
         },
         isVerified: false,
         status: "Pending",
@@ -72,6 +87,14 @@ export async function completeProfileAction(data: CompleteProfileInput): Promise
     if (invitedDocId && invitedDocId !== uid) {
       await adminDb.collection("counselors").doc(invitedDocId).delete();
     }
+
+    await logActivity({
+      type: "counselor_profile_completed",
+      title: "Profile Completed",
+      description: `${fullName} completed their counselor profile`,
+      targetId: uid,
+      targetName: fullName,
+    });
 
     return { success: true, message: "Profile submitted successfully." };
   } catch (error) {
