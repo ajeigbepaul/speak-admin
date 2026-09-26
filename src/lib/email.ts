@@ -15,7 +15,8 @@ const emailPort = process.env.EMAIL_PORT
   ? parseInt(process.env.EMAIL_PORT, 10)
   : 587;
 const emailUser = process.env.EMAIL_USER;
-const emailPass = process.env.EMAIL_PASS;
+// Google shows app passwords as "abcd efgh ijkl mnop"; pasted spaces, quotes or newlines break the login
+const emailPass = process.env.EMAIL_PASS?.replace(/[\s"']/g, "");
 const emailFrom =
   process.env.EMAIL_FROM || '"Speak Admin" <noreply@example.com>';
 

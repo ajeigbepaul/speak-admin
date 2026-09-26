@@ -12,8 +12,13 @@ function generateTemporaryPassword(length = 12) {
   return crypto.randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
 }
 
-const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_BASE_URL ||
-  (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "http://localhost:9002");
+// VERCEL_URL is the per-deployment address (e.g. speak-admin-abc123-….vercel.app), so prefer the
+// project's production domain, which Vercel sets on every deployment, before falling back to it.
+const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.NEXT_PUBLIC_VERCEL_URL;
+const APP_BASE_URL = (
+  process.env.NEXT_PUBLIC_APP_BASE_URL ||
+  (vercelHost ? `https://${vercelHost}` : "http://localhost:9002")
+).replace(/\/+$/, "");
 
 export async function inviteAdminOrUserAction(data: InviteAdminOrUserInput): Promise<ActionResult> {
   const { email, name, role } = data;
