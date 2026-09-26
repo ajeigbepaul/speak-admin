@@ -10,6 +10,8 @@ const UPLOAD_PRESET = "speak_signed";
 const UPLOAD_KINDS = {
   avatar:          { prefix: "profilePics",          resourceType: "image", chat: false },
   counselorAvatar: { prefix: "counselorProfilePics", resourceType: "image", chat: false },
+  banner:          { prefix: "profileBanners",       resourceType: "image", chat: false },
+  counselorBanner: { prefix: "counselorBanners",     resourceType: "image", chat: false },
   chatImage:       { prefix: "chatImages",           resourceType: "image", chat: true  },
   chatFile:        { prefix: "chatFiles",            resourceType: "raw",   chat: true  },
   voiceNote:       { prefix: "voiceNotes",           resourceType: "video", chat: true  }, // Cloudinary stores audio as video
@@ -49,8 +51,8 @@ export async function POST(req: NextRequest) {
       }
     }
   } else {
-    // Fixed id per user; overwrite + invalidate so a new avatar replaces the old one
-    publicId = `${config.prefix}/${uid}/avatar`;
+    // Fixed id per user; overwrite + invalidate so a new image replaces the old one
+    publicId = `${config.prefix}/${uid}/${kind === "banner" || kind === "counselorBanner" ? "banner" : "avatar"}`;
     params.overwrite  = true;
     params.invalidate = true;
   }
