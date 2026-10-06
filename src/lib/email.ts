@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "crypto";
 import nodemailer from "nodemailer";
 
 interface MailOptions {
@@ -121,6 +122,12 @@ export async function sendMail({
     let errorMessage = "Failed to send email.";
     if (error instanceof Error) {
       errorMessage = `Failed to send email: ${error.message}`;
+    }
+    // On a rejected login, say which credentials this deployment actually loaded (never the password
+    // itself: just its length and a short hash) so they can be compared with the working local ones.
+    if ((error as { code?: string })?.code === "EAUTH") {
+      const fingerprint = createHash("sha256").update(emailPass ?? "").digest("hex").slice(0, 6);
+      errorMessage += ` [account: ${emailUser}, password: ${emailPass?.length ?? 0} chars, fingerprint: ${fingerprint}]`;
     }
     return { success: false, message: errorMessage };
   }

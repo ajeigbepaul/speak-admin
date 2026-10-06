@@ -12,7 +12,10 @@ export type ActivityType =
   | "category_updated"
   | "category_deleted"
   | "account_deactivated"
-  | "account_reactivated";
+  | "account_reactivated"
+  | "feature_toggled"
+  | "testimony_approved"
+  | "testimony_rejected";
 
 export interface ActivityEntry {
   type: ActivityType;

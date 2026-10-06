@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   UserPlus, CheckCircle2, XCircle, ClipboardList,
-  ShieldCheck, Tag, Pencil, Trash2, UserX, RotateCcw,
+  ShieldCheck, Tag, Pencil, Trash2, UserX, RotateCcw, ToggleRight, MessageSquareHeart, MessageSquareX,
 } from "lucide-react";
 import type { ActivityType } from "@/actions/activityActions";
 
@@ -33,6 +33,9 @@ const TYPE_CONFIG: Record<ActivityType, Config> = {
   category_deleted:            { icon: Trash2,        color: "text-red-500",    bg: "bg-red-50" },
   account_deactivated:         { icon: UserX,         color: "text-red-600",    bg: "bg-red-100" },
   account_reactivated:         { icon: RotateCcw,     color: "text-green-600",  bg: "bg-green-100" },
+  feature_toggled:             { icon: ToggleRight,   color: "text-indigo-600", bg: "bg-indigo-100" },
+  testimony_approved:          { icon: MessageSquareHeart, color: "text-green-600", bg: "bg-green-100" },
+  testimony_rejected:          { icon: MessageSquareX, color: "text-red-600",   bg: "bg-red-100" },
 };
 
 function timeAgo(ts: Timestamp): string {

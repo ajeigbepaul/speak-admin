@@ -19,6 +19,8 @@ import {
   UserCheck,
   LogOut,
   UserCog,
+  Settings,
+  MessageSquareHeart,
 } from "lucide-react";
 
 import { useState, useEffect } from "react";
@@ -47,7 +49,6 @@ const navItems = [
     role: "superadmin",
     badgeKey: "flaggedContent",
   },
-  { href: "/settings", label: "Settings", icon: Settings, role: "superadmin" },
   */
   {
     href: "/categories",
@@ -55,6 +56,14 @@ const navItems = [
     icon: UserCog,
     role: ["admin", "superadmin"],
   },
+  {
+    href: "/testimonies",
+    label: "Testimonies",
+    icon: MessageSquareHeart,
+    role: ["admin", "superadmin"],
+    badgeKey: "pendingTestimonies",
+  },
+  { href: "/settings", label: "Settings", icon: Settings, role: ["admin", "superadmin"] },
   // { href: "/invite", label: "Invite Admin", icon: UserPlus }, // New Invite Admin link
 ];
 
@@ -68,6 +77,9 @@ export function AppSidebar() {
   const [flaggedContentCount, setFlaggedContentCount] = useState<
     number | undefined
   >(undefined);
+  const [pendingTestimoniesCount, setPendingTestimoniesCount] = useState<
+    number | undefined
+  >(undefined);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -75,6 +87,7 @@ export function AppSidebar() {
       const counts = await getSidebarCounts();
       setPendingCounsellorsActualCount(counts.pendingCounsellors);
       setFlaggedContentCount(counts.flaggedContent);
+      setPendingTestimoniesCount(counts.pendingTestimonies);
     };
 
     fetchCounts();
@@ -101,6 +114,10 @@ export function AppSidebar() {
     flaggedContent:
       flaggedContentCount !== undefined && flaggedContentCount > 0
         ? flaggedContentCount.toString()
+        : undefined,
+    pendingTestimonies:
+      pendingTestimoniesCount !== undefined && pendingTestimoniesCount > 0
+        ? pendingTestimoniesCount.toString()
         : undefined,
   };
 

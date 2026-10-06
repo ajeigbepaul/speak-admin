@@ -172,3 +172,25 @@ export interface CounselorActivity {
   };
   chats: CounselorChatActivity[];
 }
+
+// App feature flags (config/features) — toggled from Settings, read live by the mobile app
+export type FeatureKey = "testimonies" | "multilingualChat" | "bookSuggestions";
+export type FeatureFlags = Record<FeatureKey, boolean>;
+
+// Testimonies shared by users after a completed session (testimonies/{postId})
+export type TestimonyStatus = "pending" | "approved" | "rejected";
+
+export interface AdminTestimony {
+  id: string; // = postId
+  postId: string;
+  rating: number;
+  text: string;
+  category?: string;
+  anonymous: boolean;
+  displayName?: string | null;
+  status: TestimonyStatus;
+  createdAt?: string; // ISO
+  reviewedAt?: string; // ISO
+  user: { id: string; name: string; email?: string };
+  counselorName?: string;
+}

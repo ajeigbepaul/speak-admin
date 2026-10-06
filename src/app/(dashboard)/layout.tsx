@@ -33,6 +33,12 @@ export default function DashboardLayout({
       setPageTitle('Admin Management');
     } else if (pathname.startsWith('/invite')) {
       setPageTitle('Manage Invites');
+    } else if (pathname.startsWith('/categories')) {
+      setPageTitle('Categories');
+    } else if (pathname.startsWith('/testimonies')) {
+      setPageTitle('Testimonies');
+    } else if (pathname.startsWith('/settings')) {
+      setPageTitle('Settings');
     }
     // Add more else if blocks for other pages
   }, [pathname]);

@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "react-hot-toast";
-import { createCategoryAction, updateCategoryAction, deleteCategoryAction } from "@/actions/categoryActions";
+import { createCategoryAction, updateCategoryAction, deleteCategoryAction, type CategoryBook } from "@/actions/categoryActions";
+import { CategoryBooksDialog } from "./CategoryBooksDialog";
+import { BookOpen } from "lucide-react";
 
 export interface AdminCategory {
   id?: string;
@@ -19,6 +21,7 @@ export interface AdminCategory {
   description: string;
   order: number;
   isActive: boolean;
+  books?: CategoryBook[];
 }
 
 const emptyForm: AdminCategory = {
@@ -34,6 +37,7 @@ export function CategoryManagement() {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [form, setForm] = useState<AdminCategory>({ ...emptyForm });
   const [isLoading, setIsLoading] = useState(true);
+  const [booksFor, setBooksFor] = useState<AdminCategory | null>(null);
 
   const load = async () => {
     try {
@@ -49,6 +53,7 @@ export function CategoryManagement() {
           description: data.description ?? "",
           order: data.order ?? 0,
           isActive: data.isActive ?? true,
+          books: Array.isArray(data.books) ? data.books : [],
         };
       }));
     } catch (e) {
@@ -76,7 +81,9 @@ export function CategoryManagement() {
   };
 
   const saveCategory = async (c: AdminCategory) => {
-    const result = await updateCategoryAction(c.id!, c);
+    // Books are saved separately from the books dialog
+    const { books: _books, ...fields } = c;
+    const result = await updateCategoryAction(c.id!, fields);
     if (result.success) toast.success(result.message);
     else toast.error(result.message);
   };
@@ -132,6 +139,9 @@ export function CategoryManagement() {
                   <Switch checked={c.isActive} onCheckedChange={(v) => setCategories((prev) => prev.map((x) => (x.id === c.id ? { ...x, isActive: v } : x)))} />
                 </div>
                 <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setBooksFor(c)} title="Suggested books">
+                    <BookOpen className="mr-1 h-4 w-4" /> {c.books?.length ?? 0}
+                  </Button>
                   <Button variant="outline" onClick={() => saveCategory(c)}>Save</Button>
                   <Button variant="destructive" onClick={() => removeCategory(c.id!)}>Delete</Button>
                 </div>
@@ -140,6 +150,17 @@ export function CategoryManagement() {
           )}
         </div>
       </CardContent>
+
+      <CategoryBooksDialog
+        categoryId={booksFor?.id ?? null}
+        categoryName={booksFor?.name ?? ""}
+        books={booksFor?.books ?? []}
+        open={!!booksFor}
+        onOpenChange={(open) => !open && setBooksFor(null)}
+        onSaved={(books) =>
+          setCategories((prev) => prev.map((x) => (x.id === booksFor?.id ? { ...x, books } : x)))
+        }
+      />
     </Card>
   );
 }

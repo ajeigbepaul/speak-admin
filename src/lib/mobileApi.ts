@@ -45,3 +45,9 @@ export async function getPostForParticipant(postId: string, uid: string) {
   if (!post || (post.userId !== uid && post.acceptedBy !== uid)) return null;
   return post;
 }
+
+// Feature flags toggled in Settings (config/features); missing = off
+export async function isFeatureEnabled(key: "testimonies" | "multilingualChat" | "bookSuggestions"): Promise<boolean> {
+  const data = (await adminDb.collection("config").doc("features").get()).data();
+  return data?.[key] === true;
+}

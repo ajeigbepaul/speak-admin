@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, FieldValue } from "@/lib/firebase-admin";
-import { getPostForParticipant, getRequestUid, isValidDocId } from "@/lib/mobileApi";
+import { getPostForParticipant, getRequestUid, isFeatureEnabled, isValidDocId } from "@/lib/mobileApi";
+import { translateChatMessage } from "@/lib/translate";
+
+// Translation can take a few seconds on free models
+export const maxDuration = 60;
 
 // Sends an Expo push notification for a new chat message. The mobile app calls
 // this right after writing the message (replaces the sendPushNotification
 // Cloud Function). Only the sender can trigger it, and only once per message.
+// With multilingual chat on, the message is first translated into the
+// recipient's language, and the push shows the translation.
 export async function POST(req: NextRequest) {
   const uid = await getRequestUid(req);
   if (!uid) {
@@ -50,6 +56,18 @@ export async function POST(req: NextRequest) {
     const recipientData = recipientDoc.data();
     if (!recipientData) return NextResponse.json({ sent: false });
 
+    // Translate for the recipient (before the push, so the push is translated too)
+    let translatedText: string | null = null;
+    const recipientLang: string | undefined = recipientData.preferredLanguage;
+    if (messageData.lang && recipientLang !== messageData.lang && (await isFeatureEnabled("multilingualChat"))) {
+      if (recipientLang) {
+        translatedText = await translateChatMessage(messageRef, messageData, recipientLang);
+      } else {
+        // Recipient hasn't set a language yet: mark it done so their app shows the original
+        await messageRef.update({ translatedAt: FieldValue.serverTimestamp() });
+      }
+    }
+
     const tokens: string[] = Array.isArray(recipientData.pushTokens)
       ? recipientData.pushTokens
       : recipientData.expoPushToken
@@ -72,10 +90,10 @@ export async function POST(req: NextRequest) {
     let body: string;
     switch (messageData.type) {
       case "image": body = "📷 Sent an image";          break;
-      case "voice": body = "🎤 Sent a voice note";      break;
+      case "voice": body = translatedText ? `🎤 ${translatedText.length > 76 ? `${translatedText.substring(0, 76)}…` : translatedText}` : "🎤 Sent a voice note"; break;
       case "file":  body = `📎 Sent a file: ${messageData.fileName || "file"}`; break;
       default: {
-        const text: string = messageData.text || "";
+        const text: string = translatedText || messageData.text || "";
         body = text.length > 80 ? `${text.substring(0, 80)}…` : text;
       }
     }
